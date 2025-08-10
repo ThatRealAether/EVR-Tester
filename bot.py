@@ -95,12 +95,11 @@ class EventCog(commands.Cog):
             await ctx.send("No stats found yet.")
             return
 
-        def get_display_name(user_id: str):
-            member = ctx.guild.get_member(int(user_id))
-            return member.display_name if member else "Unknown User"
-
+        # If no player specified, show leaderboard top 8
         if player is None:
-            # Sort users by wins descending, then BR placements descending
+            # Sort users by:
+            # 1. wins descending
+            # 2. number of battle royal placements descending
             def sort_key(item):
                 uid, data = item
                 wins = data.get("wins", 0)
@@ -115,10 +114,10 @@ class EventCog(commands.Cog):
 
             leaderboard_lines = []
             for idx, (uid, data) in enumerate(top_8, start=1):
-                name = get_display_name(uid)
+                mention = f"<@{uid}>"
                 wins = data.get("wins", 0)
                 br_placements = ", ".join(data.get("br", [])) if data.get("br") else "None"
-                leaderboard_lines.append(f"**{idx}. {name}** — Wins: {wins}, BR Placements: {br_placements}")
+                leaderboard_lines.append(f"**{idx}. {mention}** — Wins: {wins}, BR Placements: {br_placements}")
 
             leaderboard_text = "**🏆 Top 8 Players by Wins:**\n" + "\n".join(leaderboard_lines)
             await ctx.send(leaderboard_text)
@@ -131,13 +130,20 @@ class EventCog(commands.Cog):
         data = self.user_stats[uid]
         placements = ", ".join(data["br"]) if data["br"] else "None"
         events = ", ".join(data["events"]) if data["events"] else "None"
-        name = get_display_name(uid)
+        mention = f"<@{uid}>"
         await ctx.send(
-            f"**Stats for {name}:**\n"
+            f"**Stats for {mention}:**\n"
             f"Wins: {data['wins']}\n"
             f"Battle Royal Placements: {placements}\n"
             f"Events: {events}"
         )
+
+    def get_display_name(self, ctx, user_id: int) -> str:
+        member = ctx.guild.get_member(user_id)
+        if member:
+            return member.display_name
+        else:
+            return "Unknown User"
 
     @commands.command()
     async def clearall(self, ctx, player: discord.Member):
