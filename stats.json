@@ -1,0 +1,82 @@
+{
+    "1279170883692269672": {
+        "wins": 1,
+        "br": [],
+        "events": [
+            "Pizzeria Survival Normal (Date: 7/31)"
+        ]
+    },
+    "936095315759616091": {
+        "wins": 1,
+        "br": [],
+        "events": [
+            "Pizzeria Survival Normal (Date: 7/31)"
+        ]
+    },
+    "1314963425738100818": {
+        "wins": 2,
+        "br": [
+            "1st"
+        ],
+        "events": [
+            "Pizzeria Survival Normal (Date: 7/31)",
+            "Battle Royal (Date: 8/5)"
+        ]
+    },
+    "768646090571513857": {
+        "wins": 1,
+        "br": [],
+        "events": [
+            "Pizzeria Survival Normal (Date: 7/31)"
+        ]
+    },
+    "693846276055498922": {
+        "wins": 1,
+        "br": [],
+        "events": [
+            "Pizzeria Survival Normal (Date: 8/2)"
+        ]
+    },
+    "1253431089112940644": {
+        "wins": 1,
+        "br": [
+            "2nd"
+        ],
+        "events": [
+            "Pizzeria Survival Normal (Date: 8/2)",
+            "Battle Royal (Date: 8/5)"
+        ]
+    },
+    "903803034969202688": {
+        "wins": 1,
+        "br": [],
+        "events": [
+            "Pizzeria Survival Normal (Date: 8/2)"
+        ]
+    },
+    "763824096554778644": {
+        "wins": 1,
+        "br": [],
+        "events": [
+            "Pizzeria Survival Normal (Date: 8/2)"
+        ]
+    },
+    "1166502553916289056": {
+        "wins": 0,
+        "br": [
+            "3rd"
+        ],
+        "events": [
+            "Battle Royal (Date: 8/5)"
+        ]
+    },
+    "942644873545265162": {
+        "wins": 0,
+        "br": [
+            "4th"
+        ],
+        "events": [
+            "Battle Royal (Date: 8/5)"
+        ]
+    }
+}
