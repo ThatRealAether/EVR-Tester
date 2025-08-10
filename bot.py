@@ -89,54 +89,55 @@ class EventCog(commands.Cog):
 
         self.save_stats()
 
-    @commands.command()
-    async def stats(self, ctx, player: discord.Member = None):
-        if not self.user_stats:
-            await ctx.send("No stats found yet.")
+@commands.command()
+async def stats(self, ctx, player: discord.Member = None):
+    if not self.user_stats:
+        await ctx.send("No stats found yet.")
+        return
+
+    def get_display_name(user_id: str):
+        member = ctx.guild.get_member(int(user_id))
+        return member.display_name if member else "Unknown User"
+
+    if player is None:
+        # Sort users by wins descending, then BR placements descending
+        def sort_key(item):
+            uid, data = item
+            wins = data.get("wins", 0)
+            br_count = len(data.get("br", []))
+            return (-wins, -br_count)
+
+        sorted_users = sorted(self.user_stats.items(), key=sort_key)
+        top_8 = sorted_users[:8]
+        if not top_8:
+            await ctx.send("No stats available.")
             return
 
-        # If no player specified, show leaderboard top 8
-        if player is None:
-            # Sort users by:
-            # 1. wins descending
-            # 2. number of battle royal placements descending
-            def sort_key(item):
-                uid, data = item
-                wins = data.get("wins", 0)
-                br_count = len(data.get("br", []))
-                return (-wins, -br_count)
+        leaderboard_lines = []
+        for idx, (uid, data) in enumerate(top_8, start=1):
+            name = get_display_name(uid)
+            wins = data.get("wins", 0)
+            br_placements = ", ".join(data.get("br", [])) if data.get("br") else "None"
+            leaderboard_lines.append(f"**{idx}. {name}** — Wins: {wins}, BR Placements: {br_placements}")
 
-            sorted_users = sorted(self.user_stats.items(), key=sort_key)
-            top_8 = sorted_users[:8]
-            if not top_8:
-                await ctx.send("No stats available.")
-                return
+        leaderboard_text = "**🏆 Top 8 Players by Wins:**\n" + "\n".join(leaderboard_lines)
+        await ctx.send(leaderboard_text)
+        return
 
-            leaderboard_lines = []
-            for idx, (uid, data) in enumerate(top_8, start=1):
-                mention = f"<@{uid}>"
-                wins = data.get("wins", 0)
-                br_placements = ", ".join(data.get("br", [])) if data.get("br") else "None"
-                leaderboard_lines.append(f"**{idx}. {mention}** — Wins: {wins}, BR Placements: {br_placements}")
-
-            leaderboard_text = "**🏆 Top 8 Players by Wins:**\n" + "\n".join(leaderboard_lines)
-            await ctx.send(leaderboard_text)
-            return
-
-        uid = str(player.id)
-        if uid not in self.user_stats:
-            await ctx.send(f"No stats found for {player.display_name}.")
-            return
-        data = self.user_stats[uid]
-        placements = ", ".join(data["br"]) if data["br"] else "None"
-        events = ", ".join(data["events"]) if data["events"] else "None"
-        mention = f"<@{uid}>"
-        await ctx.send(
-            f"**Stats for {mention}:**\n"
-            f"Wins: {data['wins']}\n"
-            f"Battle Royal Placements: {placements}\n"
-            f"Events: {events}"
-        )
+    uid = str(player.id)
+    if uid not in self.user_stats:
+        await ctx.send(f"No stats found for {player.display_name}.")
+        return
+    data = self.user_stats[uid]
+    placements = ", ".join(data["br"]) if data["br"] else "None"
+    events = ", ".join(data["events"]) if data["events"] else "None"
+    name = get_display_name(uid)
+    await ctx.send(
+        f"**Stats for {name}:**\n"
+        f"Wins: {data['wins']}\n"
+        f"Battle Royal Placements: {placements}\n"
+        f"Events: {events}"
+    )
 
     def get_display_name(self, ctx, user_id: int) -> str:
         member = ctx.guild.get_member(user_id)
