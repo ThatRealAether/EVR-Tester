@@ -27,38 +27,42 @@ class EventCog(commands.Cog):
 
     async def get_stats(self):
         async with self.pool.acquire() as conn:
-            rows = await conn.fetch("SELECT user_id, wins, br_placements, events FROM stats")
+            rows = await conn.fetch("SELECT user_id, wins, br_placements, events, marathon_wins FROM stats")
             data = {}
             for row in rows:
                 data[row['user_id']] = {
                     "wins": row['wins'],
                     "br_placements": row['br_placements'] or [],
-                    "events": row['events'] or []
+                    "events": row['events'] or [],
+                    "marathon_wins": row['marathon_wins'] or 0,
                 }
             return data
 
     async def get_user_stats(self, user_id):
         async with self.pool.acquire() as conn:
-            row = await conn.fetchrow("SELECT wins, br_placements, events FROM stats WHERE user_id=$1", user_id)
+            row = await conn.fetchrow(
+                "SELECT wins, br_placements, events, marathon_wins FROM stats WHERE user_id=$1", user_id)
             if row:
                 return {
                     "wins": row['wins'],
                     "br_placements": row['br_placements'] or [],
-                    "events": row['events'] or []
+                    "events": row['events'] or [],
+                    "marathon_wins": row['marathon_wins'] or 0,
                 }
             else:
-                return {"wins": 0, "br_placements": [], "events": []}
+                return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
 
-    async def save_user_stats(self, user_id, wins, br_placements_list, events_list):
+    async def save_user_stats(self, user_id, wins, br_placements_list, events_list, marathon_wins):
         async with self.pool.acquire() as conn:
             await conn.execute("""
-                INSERT INTO stats (user_id, wins, br_placements, events) 
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO stats (user_id, wins, br_placements, events, marathon_wins)
+                VALUES ($1, $2, $3, $4, $5)
                 ON CONFLICT (user_id) DO UPDATE
                 SET wins = EXCLUDED.wins,
                     br_placements = EXCLUDED.br_placements,
-                    events = EXCLUDED.events
-            """, user_id, wins, br_placements_list, events_list)
+                    events = EXCLUDED.events,
+                    marathon_wins = EXCLUDED.marathon_wins
+            """, user_id, wins, br_placements_list, events_list, marathon_wins)
 
     @commands.command()
     async def ping(self, ctx):
@@ -74,6 +78,7 @@ class EventCog(commands.Cog):
             "- **!stats [@user]** — Show stats for a user or yourself\n"
             "- **!clearall [@user]** — Clear all stats for a user\n"
             "- **!clear_recent [@user]** — Clear most recent stat for a user\n"
+            "- **!marathonset @User <number>** — Set Marathon Wins for a user\n"
         )
         await ctx.send(help_text)
 
@@ -86,6 +91,7 @@ class EventCog(commands.Cog):
         wins = stats["wins"]
         br_placements = stats["br_placements"]
         events = stats["events"]
+        marathon_wins = stats["marathon_wins"]
 
         if is_br:
             if placement_or_date is None or date is None:
@@ -106,12 +112,23 @@ class EventCog(commands.Cog):
             wins += 1
             await ctx.send(f"Recorded non-battle royal event **{event_name}** for {player.display_name} on {date}.")
 
-        await self.save_user_stats(uid, wins, br_placements, events)
+        await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
+
+    @commands.command()
+    async def marathonset(self, ctx, player: discord.Member, count: int):
+        uid = str(player.id)
+        stats = await self.get_user_stats(uid)
+
+        marathon_wins = count
+
+        await self.save_user_stats(uid, stats['wins'], stats['br_placements'], stats['events'], marathon_wins)
+
+        await ctx.send(f"Set Marathon Wins for {player.display_name} to {marathon_wins}.")
 
     @commands.command()
     async def stats(self, ctx, player: discord.Member = None):
         if player is None:
-            # Show top 8 leaderboard
+            # Show top 8 leaderboard (exclude marathon wins)
             stats = await self.get_stats()
             if not stats:
                 await ctx.send("No stats found yet.")
@@ -129,7 +146,6 @@ class EventCog(commands.Cog):
             leaderboard_lines = []
             for idx, (uid, data) in enumerate(top_8, start=1):
                 member = ctx.guild.get_member(int(uid))
-                # Mention user if cached, otherwise raw mention by ID
                 mention = member.mention if member else f"<@{uid}>"
                 wins = data.get("wins", 0)
                 br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
@@ -141,18 +157,21 @@ class EventCog(commands.Cog):
 
         uid = str(player.id)
         data = await self.get_user_stats(uid)
-        if not data or (data["wins"] == 0 and not data["br_placements"] and not data["events"]):
+        if not data or (data["wins"] == 0 and not data["br_placements"] and not data["events"] and data["marathon_wins"] == 0):
             await ctx.send(f"No stats found for {player.display_name}.")
             return
 
         placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
         events = ", ".join(data["events"]) if data["events"] else "None"
+        marathon_wins = data["marathon_wins"]
         mention = player.mention
+
         await ctx.send(
             f"**Stats for {mention}:**\n"
             f"Wins: {data['wins']}\n"
             f"Battle Royal Placements: {placements}\n"
-            f"Events: {events}"
+            f"Events: {events}\n"
+            f"Marathon Wins: {marathon_wins}"
         )
 
     @commands.command()
@@ -173,22 +192,22 @@ class EventCog(commands.Cog):
         br_placements = stats["br_placements"]
         events = stats["events"]
         wins = stats["wins"]
+        marathon_wins = stats["marathon_wins"]
 
         removed_event = events.pop() if events else None
         removed_placement = br_placements.pop() if br_placements else None
 
-        # If the removed placement was "1st" and it was a BR event, decrease wins
         if removed_placement and removed_placement.lower() == "1st":
             wins = max(0, wins - 1)
 
-        await self.save_user_stats(uid, wins, br_placements, events)
+        await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
         await ctx.send(f"Removed most recent event for {player.display_name}: event: {removed_event or 'N/A'}, placement: {removed_placement or 'N/A'}.")
 
 class DiscordBot(commands.Bot):
     def __init__(self, pool):
         intents = discord.Intents.default()
         intents.message_content = True
-        intents.members = True  # Important: enable member intent!
+        intents.members = True  # Enable members intent to mention users properly
         super().__init__(command_prefix="!", intents=intents, help_command=None)
         self.logger = logging.getLogger(__name__)
         self.pool = pool
