@@ -2,9 +2,9 @@ import discord
 from flask import Flask
 from threading import Thread
 from discord.ext import commands
-import json
 import os
 import logging
+import asyncpg
 
 app = Flask('')
 
@@ -19,24 +19,60 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
+
 class EventCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.stats_file = "stats.json"
-        self.user_stats = self.load_stats()
+        self.pool = None  # Will hold asyncpg connection pool
 
-    def load_stats(self):
-        if os.path.exists(self.stats_file):
-            try:
-                with open(self.stats_file, "r") as f:
-                    return json.load(f)
-            except json.JSONDecodeError:
-                return {}
-        return {}
+    async def cog_load(self):
+        # Create a connection pool on cog load
+        self.pool = await asyncpg.create_pool(dsn=os.getenv("DATABASE_URL"))
+        # Create table if it doesn't exist
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS stats (
+                    user_id TEXT PRIMARY KEY,
+                    wins INTEGER DEFAULT 0,
+                    br_placements TEXT[],
+                    events TEXT[]
+                )
+            """)
 
-    def save_stats(self):
-        with open(self.stats_file, "w") as f:
-            json.dump(self.user_stats, f, indent=4)
+    async def get_user_stats(self, user_id: str):
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT * FROM stats WHERE user_id=$1", user_id)
+            if row:
+                return {
+                    "wins": row["wins"],
+                    "br": row["br_placements"] or [],
+                    "events": row["events"] or []
+                }
+            else:
+                # If no record exists, create empty one
+                await conn.execute(
+                    "INSERT INTO stats (user_id, wins, br_placements, events) VALUES ($1, 0, '{}', '{}')",
+                    user_id
+                )
+                return {"wins": 0, "br": [], "events": []}
+
+    async def save_user_stats(self, user_id: str, data: dict):
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE stats SET wins=$2, br_placements=$3, events=$4 WHERE user_id=$1
+            """, user_id, data["wins"], data["br"], data["events"])
+
+    async def get_all_stats(self):
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch("SELECT * FROM stats")
+            results = {}
+            for row in rows:
+                results[row["user_id"]] = {
+                    "wins": row["wins"],
+                    "br": row["br_placements"] or [],
+                    "events": row["events"] or []
+                }
+            return results
 
     @commands.command()
     async def ping(self, ctx):
@@ -57,56 +93,48 @@ class EventCog(commands.Cog):
 
     @commands.command()
     async def eventreg(self, ctx, player: discord.Member, event_name: str, is_battle_royal: str, placement_or_date: str = None, date: str = None):
-        """
-        Usage:
-        !eventreg @player event_name true 1st 7/25   # Battle royal with placement and date
-        !eventreg @player event_name false 7/25      # Non-battle royal, date instead of placement
-        """
         is_br = is_battle_royal.lower() in ("true", "yes", "1", "y")
         uid = str(player.id)
 
-        if uid not in self.user_stats:
-            self.user_stats[uid] = {"wins": 0, "br": [], "events": []}
+        data = await self.get_user_stats(uid)
 
         if is_br:
             if placement_or_date is None or date is None:
                 await ctx.send("You must specify placement and date for a battle royal event. Example:\n`!eventreg @player event_name true 1st 7/25`")
                 return
             placement = placement_or_date
-            self.user_stats[uid]["br"].append(placement)
-            self.user_stats[uid]["events"].append(f"{event_name} (Date: {date})")
+            data["br"].append(placement)
+            data["events"].append(f"{event_name} (Date: {date})")
             if placement.lower().startswith("1"):
-                self.user_stats[uid]["wins"] += 1
+                data["wins"] += 1
             await ctx.send(f"Recorded battle royal event **{event_name}** for {player.display_name} with placement {placement} on {date}.")
         else:
             date = placement_or_date
             if date is None:
                 await ctx.send("You must specify the date for a non-battle royal event. Example:\n`!eventreg @player event_name false 7/25`")
                 return
-            self.user_stats[uid]["events"].append(f"{event_name} (Date: {date})")
-            self.user_stats[uid]["wins"] += 1
+            data["events"].append(f"{event_name} (Date: {date})")
+            data["wins"] += 1
             await ctx.send(f"Recorded non-battle royal event **{event_name}** for {player.display_name} on {date}.")
 
-        self.save_stats()
+        await self.save_user_stats(uid, data)
 
     @commands.command()
     async def stats(self, ctx, player: discord.Member = None):
-        if not self.user_stats:
+        all_stats = await self.get_all_stats()
+        if not all_stats:
             await ctx.send("No stats found yet.")
             return
 
-        # If no player specified, show leaderboard top 8
         if player is None:
-            # Sort users by:
-            # 1. wins descending
-            # 2. number of battle royal placements descending
+            # Leaderboard top 8 sorted by wins, then battle royal placements
             def sort_key(item):
                 uid, data = item
                 wins = data.get("wins", 0)
                 br_count = len(data.get("br", []))
                 return (-wins, -br_count)
 
-            sorted_users = sorted(self.user_stats.items(), key=sort_key)
+            sorted_users = sorted(all_stats.items(), key=sort_key)
             top_8 = sorted_users[:8]
             if not top_8:
                 await ctx.send("No stats available.")
@@ -114,25 +142,26 @@ class EventCog(commands.Cog):
 
             leaderboard_lines = []
             for idx, (uid, data) in enumerate(top_8, start=1):
-                mention = f"<@{uid}>"
+                # Use display name, no ping
+                display_name = self.get_display_name(ctx, int(uid))
                 wins = data.get("wins", 0)
                 br_placements = ", ".join(data.get("br", [])) if data.get("br") else "None"
-                leaderboard_lines.append(f"**{idx}. {mention}** — Wins: {wins}, BR Placements: {br_placements}")
+                leaderboard_lines.append(f"**{idx}. {display_name}** — Wins: {wins}, BR Placements: {br_placements}")
 
             leaderboard_text = "**🏆 Top 8 Players by Wins:**\n" + "\n".join(leaderboard_lines)
             await ctx.send(leaderboard_text)
             return
 
         uid = str(player.id)
-        if uid not in self.user_stats:
+        if uid not in all_stats:
             await ctx.send(f"No stats found for {player.display_name}.")
             return
-        data = self.user_stats[uid]
+        data = all_stats[uid]
         placements = ", ".join(data["br"]) if data["br"] else "None"
         events = ", ".join(data["events"]) if data["events"] else "None"
-        mention = f"<@{uid}>"
+        display_name = self.get_display_name(ctx, int(uid))
         await ctx.send(
-            f"**Stats for {mention}:**\n"
+            f"**Stats for {display_name}:**\n"
             f"Wins: {data['wins']}\n"
             f"Battle Royal Placements: {placements}\n"
             f"Events: {events}"
@@ -148,27 +177,29 @@ class EventCog(commands.Cog):
     @commands.command()
     async def clearall(self, ctx, player: discord.Member):
         uid = str(player.id)
-        if uid in self.user_stats:
-            del self.user_stats[uid]
-            self.save_stats()
-            await ctx.send(f"All stats cleared for {player.display_name}.")
-        else:
-            await ctx.send(f"No stats found for {player.display_name}.")
+        async with self.pool.acquire() as conn:
+            result = await conn.execute("DELETE FROM stats WHERE user_id=$1", uid)
+        await ctx.send(f"All stats cleared for {player.display_name}.")
 
     @commands.command()
     async def clear_recent(self, ctx, player: discord.Member):
         uid = str(player.id)
-        if uid not in self.user_stats:
-            await ctx.send(f"No stats found for {player.display_name}.")
-            return
-        data = self.user_stats[uid]
-        removed_event = data["events"].pop() if data["events"] else None
-        removed_placement = data["br"].pop() if data["br"] else None
-        self.save_stats()
+        data = await self.get_user_stats(uid)
+        removed_event = None
+        removed_placement = None
+
+        if data["events"]:
+            removed_event = data["events"].pop()
+        if data["br"]:
+            removed_placement = data["br"].pop()
+
+        await self.save_user_stats(uid, data)
+
         if removed_event or removed_placement:
             await ctx.send(f"Removed most recent event for {player.display_name}: event: {removed_event or 'N/A'}, placement: {removed_placement or 'N/A'}.")
         else:
             await ctx.send(f"No recent events to remove for {player.display_name}.")
+
 
 class DiscordBot(commands.Bot):
     def __init__(self):
@@ -204,6 +235,7 @@ class DiscordBot(commands.Bot):
             return
         await self.process_commands(message)
 
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     TOKEN = os.getenv("DISCORD_BOT_TOKEN")
@@ -211,6 +243,8 @@ if __name__ == "__main__":
         print("Error: DISCORD_BOT_TOKEN not set.")
         exit(1)
     bot = DiscordBot()
+    keep_alive()
+    bot.run(TOKEN)
     
     keep_alive()
     bot.run(TOKEN)
