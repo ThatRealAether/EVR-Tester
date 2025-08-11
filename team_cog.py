@@ -13,9 +13,8 @@ TEAM_POINTS = {
 PRESET_TEAMS = ['Chaos', 'Revel', 'Hearth', 'Honor']
 MEMBER_CAP = 10
 
-# Put your actual custom emoji strings here (must be accessible to your bot)
 TEAM_EMOJIS = {
-    "Chaos": "<:chaos:1404549946694307924>",   # Replace with your real emoji IDs
+    "Chaos": "<:chaos:1404549946694307924>",
     "Revel": "<:revel:1404549965421871265>",
     "Hearth": "<:hearth:1404549986850443334>",
     "Honor": "<:honor:1404550005573943346>"
