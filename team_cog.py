@@ -14,10 +14,10 @@ PRESET_TEAMS = ['Chaos', 'Revel', 'Hearth', 'Honor']
 MEMBER_CAP = 10
 
 TEAM_EMOJIS = {
-    "Chaos": "<:chaos:1404549946694307924>",
-    "Revel": "<:revel:1404549965421871265>",
-    "Hearth": "<:hearth:1404549986850443334>",
-    "Honor": "<:honor:1404550005573943346>"
+    'chaos': '<:chaos:1404549946694307924>',    # Replace with your actual emoji IDs
+    'revel': '<:revel:1404549965421871265>',
+    'hearth': '<:hearth:1404549986850443334>',
+    'honor': '<:honor:1404550005573943346>'
 }
 
 class TeamCog(commands.Cog):
@@ -39,7 +39,7 @@ class TeamCog(commands.Cog):
 
     async def get_user_team(self, user_id: str):
         async with self.pool.acquire() as conn:
-            row = await conn.fetchrow("SELECT team_id FROM members WHERE user_id = $1", user_id)
+            row = await conn.fetchrow("SELECT team_id FROM team_members WHERE user_id = $1", user_id)
             return row['team_id'] if row else None
 
     async def get_team_name_by_id(self, team_id: int):
@@ -49,7 +49,7 @@ class TeamCog(commands.Cog):
 
     async def get_team_members(self, team_id: int):
         async with self.pool.acquire() as conn:
-            rows = await conn.fetch("SELECT user_id FROM members WHERE team_id = $1", team_id)
+            rows = await conn.fetch("SELECT user_id FROM team_members WHERE team_id = $1", team_id)
             return [r['user_id'] for r in rows]
 
     async def get_stats_for_users(self, user_ids):
@@ -70,6 +70,9 @@ class TeamCog(commands.Cog):
         for placement in br_placements:
             points += TEAM_POINTS.get(placement.lower(), 0)
         return points
+
+    def get_emoji_for_team(self, team_name: str):
+        return TEAM_EMOJIS.get(team_name.lower(), "")
 
     @commands.command()
     async def join(self, ctx, *, team_name: str):
@@ -98,10 +101,10 @@ class TeamCog(commands.Cog):
 
         async with self.pool.acquire() as conn:
             await conn.execute(
-                "INSERT INTO members (user_id, team_id) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET team_id = EXCLUDED.team_id",
+                "INSERT INTO team_members (user_id, team_id) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET team_id = EXCLUDED.team_id",
                 user_id, team_id
             )
-        await ctx.send(f"✅ You joined team {TEAM_EMOJIS.get(team_name, '')} `{team_name}`!")
+        await ctx.send(f"✅ You joined team {self.get_emoji_for_team(team_name)} `{team_name}`!")
 
     @commands.command()
     async def leave(self, ctx):
@@ -112,10 +115,10 @@ class TeamCog(commands.Cog):
             return
 
         async with self.pool.acquire() as conn:
-            await conn.execute("DELETE FROM members WHERE user_id = $1", user_id)
+            await conn.execute("DELETE FROM team_members WHERE user_id = $1", user_id)
 
         team_name = await self.get_team_name_by_id(current_team_id)
-        await ctx.send(f"✅ You left the team {TEAM_EMOJIS.get(team_name, '')} `{team_name}`.")
+        await ctx.send(f"✅ You left the team {self.get_emoji_for_team(team_name)} `{team_name}`.")
 
     @commands.command()
     async def teamstats(self, ctx, *, team_name: str = None):
@@ -146,7 +149,7 @@ class TeamCog(commands.Cog):
         total_points = self.calculate_points(total_wins, total_br_placements)
 
         team_name = await self.get_team_name_by_id(team_id)
-        emoji = TEAM_EMOJIS.get(team_name, "")
+        emoji = self.get_emoji_for_team(team_name)
 
         embed = discord.Embed(
             title=f"Stats for Team {emoji} {team_name}",
@@ -190,17 +193,17 @@ class TeamCog(commands.Cog):
             for user in stats.values():
                 total_br_placements.extend(user.get("br_placements", []))
             total_points = self.calculate_points(total_wins, total_br_placements)
-            leaderboard.append((team_name, total_points))
+            emoji = self.get_emoji_for_team(team_name)
+            leaderboard.append((emoji, team_name, total_points))
 
-        leaderboard.sort(key=lambda x: x[1], reverse=True)
+        leaderboard.sort(key=lambda x: x[2], reverse=True)
 
         embed = discord.Embed(
             title="Team Leaderboard",
             color=discord.Color.dark_teal()
         )
 
-        for idx, (team_name, points) in enumerate(leaderboard, start=1):
-            emoji = TEAM_EMOJIS.get(team_name, "")
+        for idx, (emoji, team_name, points) in enumerate(leaderboard, start=1):
             embed.add_field(name=f"{idx}. {emoji} {team_name}", value=f"{points} points", inline=False)
 
         await ctx.send(embed=embed)
