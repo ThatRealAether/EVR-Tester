@@ -73,10 +73,12 @@ class EventCog(commands.Cog):
     async def list(self, ctx):
         help_text = (
             "# __Bot Commands__\n"
+            "- !stats - Displays the stats of all users\n"
+            "- !stats [@user] - Displays the stats of a specific user\n
+            "## __Dev Commands__
             "- **!eventreg** - Log an event\n"
             " • Example: `!eventreg @User Cooking false 7/25`\n"
             " • Example: `!eventreg @User PVP true 1st 7/25`\n"
-            "- **!stats [@user]** — Show stats for a user or yourself\n"
             "- **!clearall [@user]** — Clear all stats for a user\n"
             "- **!clear_recent [@user]** — Clear most recent stat for a user\n"
             "- **!marathonset @User <number>** — Set Marathon Wins for a user\n"
