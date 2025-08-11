@@ -114,7 +114,7 @@ class EventCog(commands.Cog):
             "- **!stats [@user]** - Displays the stats of a specific user\n"
             "- **!index** — Show list of game modes (reply with name to see description)\n"
             "- **!search <game name>** — Show winners of a specific game mode\n"
-            "- `!tlist` - Show this list of team commands."
+            "- **!tlist** - Show this list of team commands.\n"
             "## __Dev Commands__\n"
             "- **!eventreg** - Log an event\n"
             " • Example: `!eventreg @User Cooking false 7/25`\n"
