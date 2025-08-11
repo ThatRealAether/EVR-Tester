@@ -223,7 +223,7 @@ class DiscordBot(commands.Bot):
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.CommandNotFound):
-            await ctx.send(f"❌ Command `{ctx.invoked_with}` not found. Use `!list` for commands.")
+            await ctx.send(f"What in the world is `{ctx.invoked_with}`. Maybe read !list sometime")
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(f"❌ Missing argument `{error.param.name}`. Use `!list {ctx.command}` for help.")
         elif isinstance(error, commands.BadArgument):
@@ -232,7 +232,7 @@ class DiscordBot(commands.Bot):
             await ctx.send(f"⏰ Command cooldown: try again in {error.retry_after:.1f}s.")
         else:
             self.logger.error(f"Error in command {ctx.command}: {error}")
-            await ctx.send("❌ Unexpected error occurred.")
+            await ctx.send("No")
 
     async def on_message(self, message):
         if message.author.bot:
