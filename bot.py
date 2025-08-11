@@ -101,6 +101,7 @@ class EventCog(commands.Cog):
             "# __Bot Commands__\n"
             "- !stats - Displays the stats of all users\n"
             "- !stats [@user] - Displays the stats of a specific user\n"
+            "- **!index** — Show list of game modes (reply with name to see description)\n"
             "## __Dev Commands__\n"
             "- **!eventreg** - Log an event\n"
             " • Example: `!eventreg @User Cooking false 7/25`\n"
@@ -108,7 +109,6 @@ class EventCog(commands.Cog):
             "- **!clearall [@user]** — Clear all stats for a user\n"
             "- **!clear_recent [@user]** — Clear most recent stat for a user\n"
             "- **!marathonset @User <number>** — Set Marathon Wins for a user\n"
-            "- **!index** — Show list of game modes (reply with name to see description)\n"
         )
         await ctx.send(help_text)
 
