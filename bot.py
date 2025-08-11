@@ -8,6 +8,7 @@ import logging
 import asyncio
 import asyncpg
 import re
+from team_cog import TeamCog
 from datetime import datetime
 
 app = Flask('')
@@ -453,6 +454,7 @@ class DiscordBot(commands.Bot):
 
     async def setup_hook(self):
         await self.add_cog(EventCog(self, self.pool))
+        await self.add_cog(TeamCog(self, self.pool))
         self.logger.info("Cog loaded.")
 
     async def on_ready(self):
