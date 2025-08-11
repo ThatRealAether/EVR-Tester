@@ -23,7 +23,6 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
-# Game data dictionary: game name (lowercase) => description
 GAME_DATA = {
     "pizzeria survival": "## __Pizzeria Survival__\n"
                          "Pizzeria survival revolves around you surviving against a plethora of different monsters roaming around a pizzeria. Different monsters do different things so make sure to pay attention when they are explained.",
@@ -50,16 +49,12 @@ GAME_DATA = {
 }
 
 def parse_event_date(event_str):
-    # Expect event_str to have a date in format "(Date: M/D)" or "(Date: MM/DD)"
-    # Extract M and D and convert to datetime for sorting
     match = re.search(r"\(Date:\s*(\d{1,2})/(\d{1,2})\)", event_str)
     if match:
         month = int(match.group(1))
         day = int(match.group(2))
-        # Use year 2000 as dummy year for sorting
         return datetime(2000, month, day)
     else:
-        # If no date found, return minimum datetime so these go last
         return datetime.min
 
 class EventCog(commands.Cog):
@@ -117,6 +112,7 @@ class EventCog(commands.Cog):
             "- **!stats** - Displays the stats of all users\n"
             "- **!stats [@user]** - Displays the stats of a specific user\n"
             "- **!index** — Show list of game modes (reply with name to see description)\n"
+            "- **!search <game name>** — Show winners of a specific game mode\n"
             "## __Dev Commands__\n"
             "- **!eventreg** - Log an event\n"
             " • Example: `!eventreg @User Cooking false 7/25`\n"
@@ -210,7 +206,8 @@ class EventCog(commands.Cog):
         embed.add_field(name="Wins", value=str(data['wins']), inline=False)
         embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
         embed.add_field(name="Events", value=display_events if display_events else "None", inline=False)
-        embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
+        if marathon_wins > 0:
+            embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
 
         await ctx.send(embed=embed)
 
@@ -276,11 +273,10 @@ class EventCog(commands.Cog):
     @commands.command()
     async def search(self, ctx, *, game_name: str):
         game_name_lower = game_name.lower()
-        # Fetch all stats rows
         async with self.pool.acquire() as conn:
             rows = await conn.fetch("SELECT user_id, events FROM stats")
 
-        matched_entries = []  # list of tuples (user_id, event_str, date_obj)
+        matched_entries = []
 
         for row in rows:
             user_id = row['user_id']
@@ -294,8 +290,7 @@ class EventCog(commands.Cog):
             await ctx.send(f"No wins found for event matching '{game_name}'.")
             return
 
-        # Sort by event_date descending (most recent first)
-        matched_entries.sort(key=lambda x: x[2], reverse=True)
+        matched_entries.sort(key=lambda x: x[2] or 0, reverse=True)
 
         per_page = 8
         max_page = (len(matched_entries) - 1) // per_page + 1
@@ -305,9 +300,11 @@ class EventCog(commands.Cog):
                 super().__init__(timeout=180)
                 self.page = 1
                 self.per_page = per_page
+                self.max_page = max_page
+                self.user_cache = {}
 
                 self.prev_button.disabled = True
-                if max_page <= 1:
+                if self.max_page <= 1:
                     self.next_button.disabled = True
 
             async def update_embed(self):
@@ -316,20 +313,25 @@ class EventCog(commands.Cog):
                 page_entries = matched_entries[start:end]
 
                 embed = discord.Embed(
-                    title=f"Search Results for '{game_name}' (Page {self.page}/{max_page})",
+                    title=f"Search Results for '{game_name}' (Page {self.page}/{self.max_page})",
                     description="",
                     color=discord.Color.dark_teal()
                 )
 
                 for idx, (uid, ev_str, _) in enumerate(page_entries, start=start + 1):
-                    member = ctx.guild.get_member(int(uid))
-                    if not member:
-                        try:
-                            member = await ctx.guild.fetch_member(int(uid))
-                        except:
-                            member = None
+                    if uid in self.user_cache:
+                        member = self.user_cache[uid]
+                    else:
+                        member = ctx.guild.get_member(int(uid))
+                        if not member:
+                            try:
+                                member = await ctx.guild.fetch_member(int(uid))
+                            except:
+                                member = None
+                        self.user_cache[uid] = member
+
                     mention = member.mention if member else f"<@{uid}>"
-                    embed.description += f"{mention} - {ev_str}\n"
+                    embed.description += f"**{idx}. {mention}** — {ev_str}\n"
 
                 return embed
 
@@ -344,9 +346,9 @@ class EventCog(commands.Cog):
 
             @ui.button(label="Next", style=discord.ButtonStyle.blurple)
             async def next_button(self, interaction: discord.Interaction, button: ui.Button):
-                if self.page < max_page:
+                if self.page < self.max_page:
                     self.page += 1
-                self.next_button.disabled = self.page == max_page
+                self.next_button.disabled = self.page == self.max_page
                 self.prev_button.disabled = False
                 embed = await self.update_embed()
                 await interaction.response.edit_message(embed=embed, view=self)
@@ -354,3 +356,123 @@ class EventCog(commands.Cog):
         view = SearchView()
         embed = await view.update_embed()
         await ctx.send(embed=embed, view=view)
+
+
+class LeaderboardView(ui.View):
+    def __init__(self, ctx, stats, per_page=8):
+        super().__init__(timeout=180)
+        self.ctx = ctx
+        self.stats = stats
+        self.per_page = per_page
+        self.page = 1
+        self.sorted_users = sorted(
+            stats.items(),
+            key=lambda item: (-item[1].get("wins", 0), -len(item[1].get("br_placements", [])))
+        )
+        self.max_page = (len(self.sorted_users) - 1) // per_page + 1
+
+        self.prev_button.disabled = True
+        if self.max_page <= 1:
+            self.next_button.disabled = True
+
+    async def update_embed(self):
+        start = (self.page - 1) * self.per_page
+        end = start + self.per_page
+        page_users = self.sorted_users[start:end]
+
+        embed = discord.Embed(
+            title=f"🏆 Top Players by Wins (Page {self.page}/{self.max_page})",
+            description="",
+            color=discord.Color.dark_teal()
+        )
+
+        for idx, (uid, data) in enumerate(page_users, start=start + 1):
+            member = self.ctx.guild.get_member(int(uid))
+            if not member:
+                try:
+                    member = await self.ctx.guild.fetch_member(int(uid))
+                except:
+                    member = None
+            mention = member.mention if member else f"<@{uid}>"
+            wins = data.get("wins", 0)
+            br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
+            embed.description += f"**{idx}. {mention}** — Wins: {wins}, BR Placements: {br_placements}\n\n"
+
+        return embed
+
+    @ui.button(label="Previous", style=discord.ButtonStyle.blurple)
+    async def prev_button(self, interaction: discord.Interaction, button: ui.Button):
+        if self.page > 1:
+            self.page -= 1
+        self.prev_button.disabled = self.page == 1
+        self.next_button.disabled = False
+        embed = await self.update_embed()
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @ui.button(label="Next", style=discord.ButtonStyle.blurple)
+    async def next_button(self, interaction: discord.Interaction, button: ui.Button):
+        if self.page < self.max_page:
+            self.page += 1
+        self.next_button.disabled = self.page == self.max_page
+        self.prev_button.disabled = False
+        embed = await self.update_embed()
+        await interaction.response.edit_message(embed=embed, view=self)
+
+class DiscordBot(commands.Bot):
+    def __init__(self, pool):
+        intents = discord.Intents.default()
+        intents.message_content = True
+        intents.members = True
+        super().__init__(command_prefix="!", intents=intents, help_command=None)
+        self.logger = logging.getLogger(__name__)
+        self.pool = pool
+
+    async def setup_hook(self):
+        await self.add_cog(EventCog(self, self.pool))
+        self.logger.info("Cog loaded.")
+
+    async def on_ready(self):
+        self.logger.info(f"Logged in as {self.user} (ID: {self.user.id})")
+        await self.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="over Establishment Minigames"))
+        self.logger.info("Bot is ready!")
+
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.CommandNotFound):
+            await ctx.send(f"What in the world is {ctx.invoked_with}. Maybe read !list sometime")
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f"❌ Missing argument {error.param.name}. Use !list {ctx.command} for help.")
+        elif isinstance(error, commands.BadArgument):
+            await ctx.send(f"❌ Invalid argument. Use !list {ctx.command} for help.")
+        elif isinstance(error, commands.CommandOnCooldown):
+            await ctx.send(f"⏰ Command cooldown: try again in {error.retry_after:.1f}s.")
+        else:
+            self.logger.error(f"Error in command {ctx.command}: {error}")
+            await ctx.send("No")
+
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+        await self.process_commands(message)
+
+
+async def main():
+    logging.basicConfig(level=logging.INFO)
+    TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+    DATABASE_URL = os.getenv("DATABASE_URL")
+
+    if not TOKEN:
+        print("Error: DISCORD_BOT_TOKEN not set.")
+        return
+    if not DATABASE_URL:
+        print("Error: DATABASE_URL not set.")
+        return
+
+    pool = await asyncpg.create_pool(DATABASE_URL)
+    bot = DiscordBot(pool)
+
+    await bot.start(TOKEN)
+
+
+if __name__ == "__main__":
+    keep_alive()
+    asyncio.run(main())
