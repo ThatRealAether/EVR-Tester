@@ -117,7 +117,7 @@ class EventCog(commands.Cog):
             "- **!eventreg** - Log an event\n"
             " • Example: `!eventreg @User Cooking false 7/25`\n"
             " • Example: `!eventreg @User PVP true 1st 7/25`\n"
-            "- **!editentry - Edit an entry of an event\n"
+            "- **!editentry** - Edit an entry of an event\n"
             "• Example: `!editentry @User Cooking 5/6 => Cooking 5/6/2024`\n"
             "- **!clearall [@user]** — Clear all stats for a user\n"
             "- **!clearrec [@user]** — Clear most recent stat for a user\n"
