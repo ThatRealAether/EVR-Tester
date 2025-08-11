@@ -33,21 +33,28 @@ class LeaderboardView(discord.ui.View):
         end = start + 8
         current_slice = self.sorted_users[start:end]
 
-        leaderboard_lines = []
-        for idx, (uid, data) in enumerate(current_slice, start=start + 1):
-            member = self.ctx.guild.get_member(int(uid))
-            mention = member.mention if member else f"<@{uid}>"
-            wins = data.get("wins", 0)
-            br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
-            leaderboard_lines.append(f"**{idx}. {mention}** — Wins: {wins}, BR Placements: {br_placements}")
-
         embed = discord.Embed(
             title=f"🏆 Top Players by Wins (Page {self.page + 1}/{self.max_pages + 1})",
-            description="\n".join(leaderboard_lines) if leaderboard_lines else "No stats found.",
             color=discord.Color.gold()
         )
+
+        if not current_slice:
+            embed.description = "No stats found."
+        else:
+            for idx, (uid, data) in enumerate(current_slice, start=start + 1):
+                member = self.ctx.guild.get_member(int(uid))
+                mention = member.mention if member else f"<@{uid}>"
+                wins = data.get("wins", 0)
+                br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
+                embed.add_field(
+                    name=f"**{idx}. {mention}**",
+                    value=f"**Wins:** {wins}\n**BR Placements:** {br_placements}",
+                    inline=False
+                )
+
         await message.edit(embed=embed, view=self)
-        # Disable buttons appropriately
+
+        # Enable or disable buttons accordingly
         self.prev_button.disabled = self.page == 0
         self.next_button.disabled = self.page == self.max_pages
 
