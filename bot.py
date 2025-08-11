@@ -129,7 +129,8 @@ class EventCog(commands.Cog):
             leaderboard_lines = []
             for idx, (uid, data) in enumerate(top_8, start=1):
                 member = ctx.guild.get_member(int(uid))
-                mention = member.mention if member else f"User ID {uid}"
+                # Mention user if cached, otherwise raw mention by ID
+                mention = member.mention if member else f"<@{uid}>"
                 wins = data.get("wins", 0)
                 br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
                 leaderboard_lines.append(f"**{idx}. {mention}** — Wins: {wins}, BR Placements: {br_placements}")
@@ -187,6 +188,7 @@ class DiscordBot(commands.Bot):
     def __init__(self, pool):
         intents = discord.Intents.default()
         intents.message_content = True
+        intents.members = True  # Important: enable member intent!
         super().__init__(command_prefix="!", intents=intents, help_command=None)
         self.logger = logging.getLogger(__name__)
         self.pool = pool
