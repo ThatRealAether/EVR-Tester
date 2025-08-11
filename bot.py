@@ -149,9 +149,15 @@ class EventCog(commands.Cog):
             return
 
         placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
-        events = ", ".join(data["events"]) if data["events"] else "None"
+
+        events = data["events"] or []
+        recent_events = events[-10:]
+        # reversed so most recent is at top
+        events_display = "\n".join(f"- {e}" for e in reversed(recent_events))
+        if len(events) > 10:
+            events_display += f"\n+{len(events) - 10} more..."
+
         marathon_wins = data["marathon_wins"]
-        mention = player.mention
 
         embed = discord.Embed(
             title=f"Stats for {player.display_name}",
@@ -159,7 +165,7 @@ class EventCog(commands.Cog):
         )
         embed.add_field(name="Wins", value=str(data['wins']), inline=False)
         embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
-        embed.add_field(name="Events", value=events, inline=False)
+        embed.add_field(name="Events (most recent 10)", value=events_display or "None", inline=False)
         embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
 
         await ctx.send(embed=embed)
