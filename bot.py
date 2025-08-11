@@ -6,6 +6,7 @@ import os
 import logging
 import asyncio
 import asyncpg
+from discord.ui import View, button
 
 app = Flask('')
 
@@ -19,6 +20,51 @@ def run():
 def keep_alive():
     t = Thread(target=run)
     t.start()
+
+class LeaderboardView(View):
+    def __init__(self, ctx, sorted_users):
+        super().__init__(timeout=120)  # Buttons expire after 2 minutes
+        self.ctx = ctx
+        self.sorted_users = sorted_users
+        self.page = 0
+        self.per_page = 8
+        self.max_page = (len(sorted_users) - 1) // self.per_page
+
+    async def update_message(self, interaction):
+        start = self.page * self.per_page
+        end = start + self.per_page
+        page_users = self.sorted_users[start:end]
+
+        leaderboard_lines = []
+        for idx, (uid, data) in enumerate(page_users, start=start + 1):
+            member = self.ctx.guild.get_member(int(uid))
+            mention = member.mention if member else f"<@{uid}>"
+            wins = data.get("wins", 0)
+            br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
+            leaderboard_lines.append(f"**{idx}. {mention}** — Wins: {wins}, BR Placements: {br_placements}")
+
+        embed = discord.Embed(
+            title=f"🏆 Top Players by Wins (Page {self.page + 1}/{self.max_page + 1})",
+            description="\n".join(leaderboard_lines),
+            color=discord.Color.gold()
+        )
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @button(label="Previous", style=discord.ButtonStyle.primary)
+    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page > 0:
+            self.page -= 1
+            await self.update_message(interaction)
+        else:
+            await interaction.response.defer()
+
+    @button(label="Next", style=discord.ButtonStyle.primary)
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page < self.max_page:
+            self.page += 1
+            await self.update_message(interaction)
+        else:
+            await interaction.response.defer()
 
 class EventCog(commands.Cog):
     def __init__(self, bot, pool):
@@ -128,7 +174,7 @@ class EventCog(commands.Cog):
     @commands.command()
     async def stats(self, ctx, player: discord.Member = None):
         if player is None:
-            # Show top 8 leaderboard (exclude marathon wins)
+            # Paginated leaderboard
             stats = await self.get_stats()
             if not stats:
                 await ctx.send("No stats found yet.")
@@ -141,18 +187,13 @@ class EventCog(commands.Cog):
                 return (-wins, -br_count)
 
             sorted_users = sorted(stats.items(), key=sort_key)
-            top_8 = sorted_users[:8]
-
-            leaderboard_lines = []
-            for idx, (uid, data) in enumerate(top_8, start=1):
-                member = ctx.guild.get_member(int(uid))
-                mention = member.mention if member else f"<@{uid}>"
-                wins = data.get("wins", 0)
-                br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
-                leaderboard_lines.append(f"**{idx}. {mention}** — Wins: {wins}, BR Placements: {br_placements}")
-
-            leaderboard_text = "**🏆 Top 8 Players by Wins:**\n" + "\n".join(leaderboard_lines)
-            await ctx.send(leaderboard_text)
+            view = LeaderboardView(ctx, sorted_users)
+            embed = discord.Embed(title="🏆 Top Players by Wins (Page 1/1)",
+                                  description="Loading leaderboard...",
+                                  color=discord.Color.gold())
+            message = await ctx.send(embed=embed, view=view)
+            # Initialize first page
+            await view.update_message(await ctx.interaction.response.original_message() if hasattr(ctx, "interaction") else message)
             return
 
         uid = str(player.id)
