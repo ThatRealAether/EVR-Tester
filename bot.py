@@ -21,6 +21,32 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
+# Game data dictionary: game name (lowercase) => description
+GAME_DATA = {
+    "pizzeria survival": "## __Pizzeria Survival__\n"
+                         "Pizzeria survival revolves around you surviving against a plethora of different monsters roaming around a pizzeria. Different monsters do different things so make sure to pay attention when they are explained.",
+    "locate the spy": "## __Locate the Spy__\n"
+                      "You and your peers are thrown into an abandoned facility with a catch, some of you are spies, or worse. Use the role you are assigned to either survive on your own, help everyone, or sabotage those around you. But make sure to leave in time before the core reactor explodes. If a spy is let on at the end, everyone loses and the spies win. Though, there may be others with different plans in mind.",
+    "doppelgangers": "## __Doppelgangers__\n"
+                     "Everyone is thrown into a facility where you need to get checked out by guards, your goal is to be let in the facility without getting gassed. 2-3 players will be assigned to be a guard and your goal is to let the citizens in, but keep the doppelgangers out.",
+    "hide and seek": "## __Hide and Seek__\n"
+                     "In hide and seek a monster roams around the area, your goal is to not get spotted to move on to the next round, or win. If you are spotted once you are most likely guaranteed to die.",
+    "guessing game": "## __Guessing Game__\n"
+                     "The host will think of a prompt, your goal is to guess what it is in 10-15 questions. The questions *have* to be yes or no questions, the host will not respond otherwise, and if you repeatedly mess up you die. Once the questions are used up, the host will call on someone random, they can discuss what they think with their peers but if you get it wrong, you die.",
+    "property listing": "## __Property Listing__\n"
+                        "The opposite of guessing game, you will be given a prompt and then you and your peers must come up with descriptors for said prompt. The more niche it is, the more points you get. But if you have to *really* stretch it to make it work, you get less points. capping out at 20. The person with the least points at the end of each round dies.",
+    "cooking": "## __Cooking__\n"
+               "Your goal is to survive as many rounds as possible; you will work with your fellow chefs to make it through said rounds. But it won't be so easy, there are monsters outside trying to stop your progress. They range from customers to the health inspector. Try to keep the floors clean and have good teamwork, you may be docked points for doing otherwise. You have 2 lives before its over.",
+    "city rushdown": "## __City Rushdown__\n"
+                    "The game takes place in a huge and booming city, except you are stuck on a platform. Your goal is to not die from electrocution, if the purple electricity happens to get passed to you, pass it to others by colliding with their bounding box.",
+    "ghost hunting": "## __Ghost Hunting__\n"
+                     "You are trapped in a facility with your peers, it doesn't matter if they die, all that matters is that *you* survive. Your goal is to capture as much paranormal activity as possible on your body \"camera\". This can range from a tray floating, random sounds, or the ghost itself, though it is recommended that you avoid seeing the ghost, those that do usually never live to tell the tale.",
+    "hook chasers": "## __Hook Chasers__\n"
+                   "Hook Chasers is all about aerial tag, everyone except one random person every round. The tagger's goal is to tag everyone, the runner's goal is to run away, the time for each round ranges from 8-15 minutes depending on player count. The tagger gets points for tagging people, runners get points for time alive, the person with the least amount of points every round dies.",
+    "karts": "## __Karts__\n"
+             "You and your peers are placed a racetrack, your goal is to not be in one of the last 2 positions when you finish, if you are, you get eliminated from the event. Each track has its own obstacles that you need to avoid ranging from icy floors, to giant pinballs in the sky."
+}
+
 class EventCog(commands.Cog):
     def __init__(self, bot, pool):
         self.bot = bot
@@ -82,6 +108,7 @@ class EventCog(commands.Cog):
             "- **!clearall [@user]** — Clear all stats for a user\n"
             "- **!clear_recent [@user]** — Clear most recent stat for a user\n"
             "- **!marathonset @User <number>** — Set Marathon Wins for a user\n"
+            "- **!index** — Show list of game modes (reply with name to see description)\n"
         )
         await ctx.send(help_text)
 
@@ -149,15 +176,19 @@ class EventCog(commands.Cog):
             return
 
         placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
-
-        events = data["events"] or []
-        recent_events = events[-10:]
-        # reversed so most recent is at top
-        events_display = "\n".join(f"- {e}" for e in reversed(recent_events))
-        if len(events) > 10:
-            events_display += f"\n+{len(events) - 10} more..."
-
+        events_list = data["events"] if data["events"] else []
         marathon_wins = data["marathon_wins"]
+        mention = player.mention
+
+        # Format events as a list with max 10 and a "+N more" if applicable
+        display_events = ""
+        max_events_display = 10
+        events_to_show = events_list[-max_events_display:]  # last 10 events
+        for e in events_to_show:
+            display_events += f"• {e}\n"
+        remaining = len(events_list) - max_events_display
+        if remaining > 0:
+            display_events += f"+{remaining} more..."
 
         embed = discord.Embed(
             title=f"Stats for {player.display_name}",
@@ -165,7 +196,7 @@ class EventCog(commands.Cog):
         )
         embed.add_field(name="Wins", value=str(data['wins']), inline=False)
         embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
-        embed.add_field(name="Events (most recent 10)", value=events_display or "None", inline=False)
+        embed.add_field(name="Events", value=display_events if display_events else "None", inline=False)
         embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
 
         await ctx.send(embed=embed)
@@ -198,6 +229,40 @@ class EventCog(commands.Cog):
 
         await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
         await ctx.send(f"Removed most recent event for {player.display_name}: event: {removed_event or 'N/A'}, placement: {removed_placement or 'N/A'}.")
+
+    @commands.command()
+    async def index(self, ctx):
+        # Create embed listing all game names
+        embed = discord.Embed(
+            title="EM Game Index",
+            description="\n".join(f"• {name.title()}" for name in GAME_DATA.keys()),
+            color=discord.Color.dark_teal()
+        )
+        await ctx.send(embed=embed)
+
+        def check(m):
+            return (
+                m.author == ctx.author
+                and m.channel == ctx.channel
+                and m.content.lower() in GAME_DATA
+            )
+
+        try:
+            # Wait for reply from user for 20 seconds
+            msg = await self.bot.wait_for('message', timeout=20.0, check=check)
+        except asyncio.TimeoutError:
+            await ctx.send("Command timed out! Type !index to try again.")
+            return
+
+        # User replied with a valid game name
+        description = GAME_DATA[msg.content.lower()]
+        embed_desc = discord.Embed(
+            title=f"EM Game Index: {msg.content.title()}",
+            description=description,
+            color=discord.Color.dark_teal()
+        )
+        await ctx.send(embed=embed_desc)
+
 
 class LeaderboardView(ui.View):
     def __init__(self, ctx, stats, per_page=8):
@@ -246,7 +311,6 @@ class LeaderboardView(ui.View):
     async def prev_button(self, interaction: discord.Interaction, button: ui.Button):
         if self.page > 1:
             self.page -= 1
-        # Update button disabled states BEFORE responding
         self.prev_button.disabled = self.page == 1
         self.next_button.disabled = False
         embed = await self.update_embed()
@@ -256,7 +320,6 @@ class LeaderboardView(ui.View):
     async def next_button(self, interaction: discord.Interaction, button: ui.Button):
         if self.page < self.max_page:
             self.page += 1
-        # Update button disabled states BEFORE responding
         self.next_button.disabled = self.page == self.max_page
         self.prev_button.disabled = False
         embed = await self.update_embed()
@@ -266,7 +329,7 @@ class DiscordBot(commands.Bot):
     def __init__(self, pool):
         intents = discord.Intents.default()
         intents.message_content = True
-        intents.members = True  # Enable members intent to mention users properly
+        intents.members = True  # Needed for mentions
         super().__init__(command_prefix="!", intents=intents, help_command=None)
         self.logger = logging.getLogger(__name__)
         self.pool = pool
