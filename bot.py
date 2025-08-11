@@ -473,7 +473,7 @@ class DiscordBot(commands.Bot):
             await ctx.send(f"⏰ Command cooldown: try again in {error.retry_after:.1f}s.")
         else:
             self.logger.error(f"Error in command {ctx.command}: {error}")
-            await ctx.send("No")
+            await ctx.send(f"Error: {error}")
 
     async def on_message(self, message):
         if message.author.bot:
