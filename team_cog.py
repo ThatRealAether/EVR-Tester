@@ -174,7 +174,7 @@ class TeamCog(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def teamleaderboard(self, ctx):
+    async def leaderboard(self, ctx):
         async with self.pool.acquire() as conn:
             teams = await conn.fetch("SELECT id, name FROM teams")
 
@@ -232,7 +232,6 @@ class TeamCog(commands.Cog):
             "- `!join <team_name>` - Join a preset team (Chaos, Revel, Hearth, Honor). Must have at least one event.\n"
             "- `!leave` - Leave your current team.\n"
             "- `!teamstats [team_name]` - Show stats of a team or your own team if no name provided.\n"
-            "- `!teamleaderboard` - Show leaderboard of all teams by points.\n"
-            "- `!tlist` - Show this list of team commands."
+            "- `!leaderboard` - Show leaderboard of all teams by points.\n"
         )
         await ctx.send(commands_list)
