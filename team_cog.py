@@ -14,10 +14,10 @@ PRESET_TEAMS = ['Chaos', 'Revel', 'Hearth', 'Honor']
 MEMBER_CAP = 10
 
 TEAM_EMOJIS = {
-    "Chaos": "<:Chaos:1404549946694307924>",
-    "Revel": "<:Revel:1404549965421871265>",
-    "Hearth": "<:Hearth:1404549986850443334>",
-    "Honor": "<:Honor:1404550005573943346>",
+    "Chaos": "<:chaos:1404549946694307924>",
+    "Revel": "<:revel:1404549965421871265>",
+    "Hearth": "<:hearth:1404549986850443334>",
+    "Honor": "<:honor:1404550005573943346>",
 }
 
 class TeamCog(commands.Cog):
