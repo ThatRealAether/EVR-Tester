@@ -123,7 +123,6 @@ class TeamCog(commands.Cog):
     @commands.command()
     async def teamstats(self, ctx, *, team_name: str = None):
         if team_name is None:
-            # Show user’s team stats if they are in a team
             user_id = str(ctx.author.id)
             team_id = await self.get_user_team(user_id)
             if team_id is None:
@@ -229,9 +228,9 @@ class TeamCog(commands.Cog):
     async def tlist(self, ctx):
         commands_list = (
             "**Team Commands:**\n"
-            "- `!join <team_name>` - Join a preset team (Chaos, Revel, Hearth, Honor). Must have at least one event.\n"
-            "- `!leave` - Leave your current team.\n"
-            "- `!teamstats [team_name]` - Show stats of a team or your own team if no name provided.\n"
-            "- `!leaderboard` - Show leaderboard of all teams by points.\n"
+            "- **!join <team_name>** - Join a preset team (Chaos, Revel, Hearth, Honor). Must have at least one event.\n"
+            "- **!leave** - Leave your current team.\n"
+            "- **!teamstats [team_name]** - Show stats of a team or your own team if no name provided.\n"
+            "- **!leaderboard** - Show leaderboard of all teams by points.\n"
         )
         await ctx.send(commands_list)
