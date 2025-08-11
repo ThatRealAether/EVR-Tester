@@ -14,16 +14,19 @@ PRESET_TEAMS = ['Chaos', 'Revel', 'Hearth', 'Honor']
 MEMBER_CAP = 10
 
 TEAM_EMOJIS = {
-    'chaos': '<:chaos:1404549946694307924>',    # Replace with your actual emoji IDs
-    'revel': '<:revel:1404549965421871265>',
-    'hearth': '<:hearth:1404549986850443334>',
-    'honor': '<:honor:1404550005573943346>'
+    "Chaos": "<:Chaos:1404549946694307924>",
+    "Revel": "<:Revel:1404549965421871265>",
+    "Hearth": "<:Hearth:1404549986850443334>",
+    "Honor": "<:Honor:1404550005573943346>",
 }
 
 class TeamCog(commands.Cog):
     def __init__(self, bot, pool):
         self.bot = bot
         self.pool = pool
+
+    def get_emoji_for_team(self, team_name: str) -> str:
+        return TEAM_EMOJIS.get(team_name, "")
 
     async def user_has_events(self, user_id: str) -> bool:
         async with self.pool.acquire() as conn:
@@ -70,9 +73,6 @@ class TeamCog(commands.Cog):
         for placement in br_placements:
             points += TEAM_POINTS.get(placement.lower(), 0)
         return points
-
-    def get_emoji_for_team(self, team_name: str):
-        return TEAM_EMOJIS.get(team_name.lower(), "")
 
     @commands.command()
     async def join(self, ctx, *, team_name: str):
@@ -123,6 +123,7 @@ class TeamCog(commands.Cog):
     @commands.command()
     async def teamstats(self, ctx, *, team_name: str = None):
         if team_name is None:
+            # Show user’s team stats if they are in a team
             user_id = str(ctx.author.id)
             team_id = await self.get_user_team(user_id)
             if team_id is None:
@@ -194,7 +195,7 @@ class TeamCog(commands.Cog):
                 total_br_placements.extend(user.get("br_placements", []))
             total_points = self.calculate_points(total_wins, total_br_placements)
             emoji = self.get_emoji_for_team(team_name)
-            leaderboard.append((emoji, team_name, total_points))
+            leaderboard.append((emoji, team_name, total_points, members))
 
         leaderboard.sort(key=lambda x: x[2], reverse=True)
 
@@ -203,8 +204,24 @@ class TeamCog(commands.Cog):
             color=discord.Color.dark_teal()
         )
 
-        for idx, (emoji, team_name, points) in enumerate(leaderboard, start=1):
-            embed.add_field(name=f"{idx}. {emoji} {team_name}", value=f"{points} points", inline=False)
+        for idx, (emoji, team_name, points, members) in enumerate(leaderboard, start=1):
+            member_mentions = []
+            for uid in members:
+                member = ctx.guild.get_member(int(uid))
+                if member:
+                    member_mentions.append(member.mention)
+                else:
+                    member_mentions.append(f"<@{uid}>")
+
+            members_text = ", ".join(member_mentions) if member_mentions else "No members"
+
+            embed.add_field(
+                name=f"{idx}. {emoji} {team_name} - {points} points",
+                value=f"Members:\n{members_text}",
+                inline=False
+            )
+
+            embed.add_field(name="\u200b", value="\u200b", inline=False)
 
         await ctx.send(embed=embed)
 
@@ -216,5 +233,6 @@ class TeamCog(commands.Cog):
             "- `!leave` - Leave your current team.\n"
             "- `!teamstats [team_name]` - Show stats of a team or your own team if no name provided.\n"
             "- `!teamleaderboard` - Show leaderboard of all teams by points.\n"
+            "- `!tlist` - Show this list of team commands."
         )
         await ctx.send(commands_list)
