@@ -107,7 +107,7 @@ class EventCog(commands.Cog):
             " • Example: `!eventreg @User Cooking false 7/25`\n"
             " • Example: `!eventreg @User PVP true 1st 7/25`\n"
             "- **!clearall [@user]** — Clear all stats for a user\n"
-            "- **!clear_recent [@user]** — Clear most recent stat for a user\n"
+            "- **!clearrec [@user]** — Clear most recent stat for a user\n"
             "- **!marathonset @User <number>** — Set Marathon Wins for a user\n"
         )
         await ctx.send(help_text)
@@ -158,7 +158,6 @@ class EventCog(commands.Cog):
     @commands.command()
     async def stats(self, ctx, player: discord.Member = None):
         if player is None:
-            # Show paginated leaderboard excluding marathon wins
             stats = await self.get_stats()
             if not stats:
                 await ctx.send("No stats found yet.")
@@ -180,10 +179,9 @@ class EventCog(commands.Cog):
         marathon_wins = data["marathon_wins"]
         mention = player.mention
 
-        # Format events as a list with max 10 and a "+N more" if applicable
         display_events = ""
         max_events_display = 10
-        events_to_show = events_list[-max_events_display:]  # last 10 events
+        events_to_show = events_list[-max_events_display:]
         for e in events_to_show:
             display_events += f"• {e}\n"
         remaining = len(events_list) - max_events_display
@@ -209,7 +207,7 @@ class EventCog(commands.Cog):
         await ctx.send(f"All stats cleared for {player.display_name}.")
 
     @commands.command()
-    async def clear_recent(self, ctx, player: discord.Member):
+    async def clearrec(self, ctx, player: discord.Member):
         uid = str(player.id)
         stats = await self.get_user_stats(uid)
         if not stats or (stats["wins"] == 0 and not stats["br_placements"] and not stats["events"]):
@@ -232,10 +230,9 @@ class EventCog(commands.Cog):
 
     @commands.command()
     async def index(self, ctx):
-        # Create embed listing all game names
         embed = discord.Embed(
             title="EM Game Index",
-            description="\n".join(f"• {name.title()}" for name in GAME_DATA.keys()),
+            description="\n\n".join(f"• {name.title()}" for name in GAME_DATA.keys()),
             color=discord.Color.dark_teal()
         )
         await ctx.send(embed=embed)
@@ -248,13 +245,11 @@ class EventCog(commands.Cog):
             )
 
         try:
-            # Wait for reply from user for 20 seconds
             msg = await self.bot.wait_for('message', timeout=20.0, check=check)
         except asyncio.TimeoutError:
             await ctx.send("Command timed out! Type !index to try again.")
             return
 
-        # User replied with a valid game name
         description = GAME_DATA[msg.content.lower()]
         embed_desc = discord.Embed(
             title=f"EM Game Index: {msg.content.title()}",
@@ -277,7 +272,6 @@ class LeaderboardView(ui.View):
         )
         self.max_page = (len(self.sorted_users) - 1) // per_page + 1
 
-        # Disable prev button initially
         self.prev_button.disabled = True
         if self.max_page <= 1:
             self.next_button.disabled = True
@@ -329,7 +323,7 @@ class DiscordBot(commands.Bot):
     def __init__(self, pool):
         intents = discord.Intents.default()
         intents.message_content = True
-        intents.members = True  # Needed for mentions
+        intents.members = True
         super().__init__(command_prefix="!", intents=intents, help_command=None)
         self.logger = logging.getLogger(__name__)
         self.pool = pool
