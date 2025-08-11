@@ -27,38 +27,38 @@ class EventCog(commands.Cog):
 
     async def get_stats(self):
         async with self.pool.acquire() as conn:
-            rows = await conn.fetch("SELECT user_id, wins, br, events FROM stats")
+            rows = await conn.fetch("SELECT user_id, wins, br_placements, events FROM stats")
             data = {}
             for row in rows:
                 data[row['user_id']] = {
                     "wins": row['wins'],
-                    "br": row['br'] or [],
+                    "br_placements": row['br_placements'] or [],
                     "events": row['events'] or []
                 }
             return data
 
     async def get_user_stats(self, user_id):
         async with self.pool.acquire() as conn:
-            row = await conn.fetchrow("SELECT wins, br, events FROM stats WHERE user_id=$1", user_id)
+            row = await conn.fetchrow("SELECT wins, br_placements, events FROM stats WHERE user_id=$1", user_id)
             if row:
                 return {
                     "wins": row['wins'],
-                    "br": row['br'] or [],
+                    "br_placements": row['br_placements'] or [],
                     "events": row['events'] or []
                 }
             else:
-                return {"wins": 0, "br": [], "events": []}
+                return {"wins": 0, "br_placements": [], "events": []}
 
-    async def save_user_stats(self, user_id, wins, br_list, events_list):
+    async def save_user_stats(self, user_id, wins, br_placements_list, events_list):
         async with self.pool.acquire() as conn:
             await conn.execute("""
-                INSERT INTO stats (user_id, wins, br, events) 
+                INSERT INTO stats (user_id, wins, br_placements, events) 
                 VALUES ($1, $2, $3, $4)
                 ON CONFLICT (user_id) DO UPDATE
                 SET wins = EXCLUDED.wins,
-                    br = EXCLUDED.br,
+                    br_placements = EXCLUDED.br_placements,
                     events = EXCLUDED.events
-            """, user_id, wins, br_list, events_list)
+            """, user_id, wins, br_placements_list, events_list)
 
     @commands.command()
     async def ping(self, ctx):
@@ -84,7 +84,7 @@ class EventCog(commands.Cog):
 
         stats = await self.get_user_stats(uid)
         wins = stats["wins"]
-        br = stats["br"]
+        br_placements = stats["br_placements"]
         events = stats["events"]
 
         if is_br:
@@ -92,7 +92,7 @@ class EventCog(commands.Cog):
                 await ctx.send("You must specify placement and date for a battle royal event. Example:\n`!eventreg @player event_name true 1st 7/25`")
                 return
             placement = placement_or_date
-            br.append(placement)
+            br_placements.append(placement)
             events.append(f"{event_name} (Date: {date})")
             if placement.lower() == "1st":
                 wins += 1
@@ -106,7 +106,7 @@ class EventCog(commands.Cog):
             wins += 1
             await ctx.send(f"Recorded non-battle royal event **{event_name}** for {player.display_name} on {date}.")
 
-        await self.save_user_stats(uid, wins, br, events)
+        await self.save_user_stats(uid, wins, br_placements, events)
 
     @commands.command()
     async def stats(self, ctx, player: discord.Member = None):
@@ -120,7 +120,7 @@ class EventCog(commands.Cog):
             def sort_key(item):
                 uid, data = item
                 wins = data.get("wins", 0)
-                br_count = len(data.get("br", []))
+                br_count = len(data.get("br_placements", []))
                 return (-wins, -br_count)
 
             sorted_users = sorted(stats.items(), key=sort_key)
@@ -131,7 +131,7 @@ class EventCog(commands.Cog):
                 member = ctx.guild.get_member(int(uid))
                 mention = member.mention if member else f"User ID {uid}"
                 wins = data.get("wins", 0)
-                br_placements = ", ".join(data.get("br", [])) if data.get("br") else "None"
+                br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
                 leaderboard_lines.append(f"**{idx}. {mention}** — Wins: {wins}, BR Placements: {br_placements}")
 
             leaderboard_text = "**🏆 Top 8 Players by Wins:**\n" + "\n".join(leaderboard_lines)
@@ -140,11 +140,11 @@ class EventCog(commands.Cog):
 
         uid = str(player.id)
         data = await self.get_user_stats(uid)
-        if not data or (data["wins"] == 0 and not data["br"] and not data["events"]):
+        if not data or (data["wins"] == 0 and not data["br_placements"] and not data["events"]):
             await ctx.send(f"No stats found for {player.display_name}.")
             return
 
-        placements = ", ".join(data["br"]) if data["br"] else "None"
+        placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
         events = ", ".join(data["events"]) if data["events"] else "None"
         mention = player.mention
         await ctx.send(
@@ -165,22 +165,22 @@ class EventCog(commands.Cog):
     async def clear_recent(self, ctx, player: discord.Member):
         uid = str(player.id)
         stats = await self.get_user_stats(uid)
-        if not stats or (stats["wins"] == 0 and not stats["br"] and not stats["events"]):
+        if not stats or (stats["wins"] == 0 and not stats["br_placements"] and not stats["events"]):
             await ctx.send(f"No stats found for {player.display_name}.")
             return
 
-        br = stats["br"]
+        br_placements = stats["br_placements"]
         events = stats["events"]
         wins = stats["wins"]
 
         removed_event = events.pop() if events else None
-        removed_placement = br.pop() if br else None
+        removed_placement = br_placements.pop() if br_placements else None
 
         # If the removed placement was "1st" and it was a BR event, decrease wins
         if removed_placement and removed_placement.lower() == "1st":
             wins = max(0, wins - 1)
 
-        await self.save_user_stats(uid, wins, br, events)
+        await self.save_user_stats(uid, wins, br_placements, events)
         await ctx.send(f"Removed most recent event for {player.display_name}: event: {removed_event or 'N/A'}, placement: {removed_placement or 'N/A'}.")
 
 class DiscordBot(commands.Bot):
@@ -237,6 +237,5 @@ async def main():
     await bot.start(TOKEN)
 
 if __name__ == "__main__":
-    asyncio.run(main())
     keep_alive()
-    bot.run(TOKEN)
+    asyncio.run(main())
