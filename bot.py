@@ -75,7 +75,7 @@ class EventCog(commands.Cog):
             "# __Bot Commands__\n"
             "- !stats - Displays the stats of all users\n"
             "- !stats [@user] - Displays the stats of a specific user\n
-            "## __Dev Commands__
+            "## __Dev Commands__\n"
             "- **!eventreg** - Log an event\n"
             " • Example: `!eventreg @User Cooking false 7/25`\n"
             " • Example: `!eventreg @User PVP true 1st 7/25`\n"
