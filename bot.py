@@ -1,8 +1,8 @@
 import discord
-from discord.ext import commands
-from discord import Embed, ui, Interaction
+from discord import ui
 from flask import Flask
 from threading import Thread
+from discord.ext import commands
 import os
 import logging
 import asyncio
@@ -20,69 +20,6 @@ def run():
 def keep_alive():
     t = Thread(target=run)
     t.start()
-
-class LeaderboardView(ui.View):
-    def __init__(self, ctx, stats, per_page=8):
-        super().__init__(timeout=180)  # 3 minutes timeout
-        self.ctx = ctx
-        self.stats = stats
-        self.per_page = per_page
-        self.page = 1
-        self.sorted_users = sorted(
-            stats.items(),
-            key=lambda item: (-item[1].get("wins", 0), -len(item[1].get("br_placements", [])))
-        )
-        self.max_page = (len(self.sorted_users) - 1) // per_page + 1
-
-        # Disable prev button initially
-        self.prev_button.disabled = True
-        if self.max_page <= 1:
-            self.next_button.disabled = True
-
-    async def update_embed(self):
-        start = (self.page - 1) * self.per_page
-        end = start + self.per_page
-        page_users = self.sorted_users[start:end]
-
-        embed = Embed(
-            title=f"🏆 Top Players by Wins (Page {self.page}/{self.max_page})",
-            description="",
-            color=discord.Color.dark_teal()
-        )
-
-        for idx, (uid, data) in enumerate(page_users, start=start + 1):
-            member = self.ctx.guild.get_member(int(uid))
-            if not member:
-                try:
-                    member = await self.ctx.guild.fetch_member(int(uid))
-                except:
-                    member = None
-            mention = member.mention if member else f"<@{uid}>"
-            wins = data.get("wins", 0)
-            br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
-            embed.description += f"**{idx}. {mention}** — Wins: {wins}, BR Placements: {br_placements}\n\n"
-
-        return embed
-
-    @ui.button(label="Previous", style=discord.ButtonStyle.blurple)
-    async def prev_button(self, interaction: Interaction, button: ui.Button):
-        if self.page > 1:
-            self.page -= 1
-            embed = await self.update_embed()
-            await interaction.response.edit_message(embed=embed, view=self)
-        # Disable buttons if on first page
-        self.prev_button.disabled = self.page == 1
-        self.next_button.disabled = False
-
-    @ui.button(label="Next", style=discord.ButtonStyle.blurple)
-    async def next_button(self, interaction: Interaction, button: ui.Button):
-        if self.page < self.max_page:
-            self.page += 1
-            embed = await self.update_embed()
-            await interaction.response.edit_message(embed=embed, view=self)
-        # Disable buttons if on last page
-        self.next_button.disabled = self.page == self.max_page
-        self.prev_button.disabled = False
 
 class EventCog(commands.Cog):
     def __init__(self, bot, pool):
@@ -192,6 +129,7 @@ class EventCog(commands.Cog):
     @commands.command()
     async def stats(self, ctx, player: discord.Member = None):
         if player is None:
+            # Show paginated leaderboard excluding marathon wins
             stats = await self.get_stats()
             if not stats:
                 await ctx.send("No stats found yet.")
@@ -211,12 +149,13 @@ class EventCog(commands.Cog):
         placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
         events = ", ".join(data["events"]) if data["events"] else "None"
         marathon_wins = data["marathon_wins"]
+        mention = player.mention
 
-        embed = Embed(
+        embed = discord.Embed(
             title=f"Stats for {player.display_name}",
             color=discord.Color.dark_teal()
         )
-        embed.add_field(name="Wins", value=str(data["wins"]), inline=False)
+        embed.add_field(name="Wins", value=str(data['wins']), inline=False)
         embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
         embed.add_field(name="Events", value=events, inline=False)
         embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
@@ -252,11 +191,74 @@ class EventCog(commands.Cog):
         await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
         await ctx.send(f"Removed most recent event for {player.display_name}: event: {removed_event or 'N/A'}, placement: {removed_placement or 'N/A'}.")
 
+class LeaderboardView(ui.View):
+    def __init__(self, ctx, stats, per_page=8):
+        super().__init__(timeout=180)  # 3 minutes timeout
+        self.ctx = ctx
+        self.stats = stats
+        self.per_page = per_page
+        self.page = 1
+        self.sorted_users = sorted(
+            stats.items(),
+            key=lambda item: (-item[1].get("wins", 0), -len(item[1].get("br_placements", [])))
+        )
+        self.max_page = (len(self.sorted_users) - 1) // per_page + 1
+
+        # Disable prev button initially
+        self.prev_button.disabled = True
+        if self.max_page <= 1:
+            self.next_button.disabled = True
+
+    async def update_embed(self):
+        start = (self.page - 1) * self.per_page
+        end = start + self.per_page
+        page_users = self.sorted_users[start:end]
+
+        embed = discord.Embed(
+            title=f"🏆 Top Players by Wins (Page {self.page}/{self.max_page})",
+            description="",
+            color=discord.Color.dark_teal()
+        )
+
+        for idx, (uid, data) in enumerate(page_users, start=start + 1):
+            member = self.ctx.guild.get_member(int(uid))
+            if not member:
+                try:
+                    member = await self.ctx.guild.fetch_member(int(uid))
+                except:
+                    member = None
+            mention = member.mention if member else f"<@{uid}>"
+            wins = data.get("wins", 0)
+            br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
+            embed.description += f"**{idx}. {mention}** — Wins: {wins}, BR Placements: {br_placements}\n\n"
+
+        return embed
+
+    @ui.button(label="Previous", style=discord.ButtonStyle.blurple)
+    async def prev_button(self, interaction: discord.Interaction, button: ui.Button):
+        if self.page > 1:
+            self.page -= 1
+        # Update button disabled states BEFORE responding
+        self.prev_button.disabled = self.page == 1
+        self.next_button.disabled = False
+        embed = await self.update_embed()
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @ui.button(label="Next", style=discord.ButtonStyle.blurple)
+    async def next_button(self, interaction: discord.Interaction, button: ui.Button):
+        if self.page < self.max_page:
+            self.page += 1
+        # Update button disabled states BEFORE responding
+        self.next_button.disabled = self.page == self.max_page
+        self.prev_button.disabled = False
+        embed = await self.update_embed()
+        await interaction.response.edit_message(embed=embed, view=self)
+
 class DiscordBot(commands.Bot):
     def __init__(self, pool):
         intents = discord.Intents.default()
         intents.message_content = True
-        intents.members = True  # Needed for member cache & fetch
+        intents.members = True  # Enable members intent to mention users properly
         super().__init__(command_prefix="!", intents=intents, help_command=None)
         self.logger = logging.getLogger(__name__)
         self.pool = pool
@@ -281,7 +283,7 @@ class DiscordBot(commands.Bot):
             await ctx.send(f"⏰ Command cooldown: try again in {error.retry_after:.1f}s.")
         else:
             self.logger.error(f"Error in command {ctx.command}: {error}")
-            await ctx.send("❌ Unexpected error occurred.")
+            await ctx.send("No")
 
     async def on_message(self, message):
         if message.author.bot:
