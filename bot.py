@@ -195,9 +195,9 @@ class EventCog(commands.Cog):
             sorted_users = sorted(stats.items(), key=sort_key)
             view = LeaderboardView(ctx, sorted_users)
             embed = discord.Embed(
-                title=f"🏆 Top Players by Wins (Page 1/{(len(sorted_users)-1)//8 + 1})",
+                title=f"Top Players by Wins (Page 1/{(len(sorted_users)-1)//8 + 1})",
                 description="Loading leaderboard...",
-                color=discord.Color.gold()
+                color=discord.Color.dark_teal()
             )
             message = await ctx.send(embed=embed, view=view)
             await view.update_message(message)
