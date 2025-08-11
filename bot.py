@@ -99,8 +99,8 @@ class EventCog(commands.Cog):
     async def list(self, ctx):
         help_text = (
             "# __Bot Commands__\n"
-            "- !stats - Displays the stats of all users\n"
-            "- !stats [@user] - Displays the stats of a specific user\n"
+            "- **!stats** - Displays the stats of all users\n"
+            "- **!stats [@user]** - Displays the stats of a specific user\n"
             "- **!index** — Show list of game modes (reply with name to see description)\n"
             "## __Dev Commands__\n"
             "- **!eventreg** - Log an event\n"
