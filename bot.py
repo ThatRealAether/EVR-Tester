@@ -156,6 +156,28 @@ class EventCog(commands.Cog):
         await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
 
     @commands.command()
+    async def editentry(self, ctx, player: discord.Member, *, args: str):
+        uid = str(player.id)
+        if "=>" not in args:
+            await ctx.send("You must separate the old and new event strings with `=>`.")
+            return
+
+        old_event_str, new_event_str = map(str.strip, args.split("=>", 1))
+
+        stats = await self.get_user_stats(uid)
+        events = stats["events"]
+
+        if old_event_str not in events:
+            await ctx.send(f"Could not find the event `{old_event_str}` in {player.display_name}'s events.")
+            return
+
+        index = events.index(old_event_str)
+        events[index] = new_event_str
+
+        await self.save_user_stats(uid, stats["wins"], stats["br_placements"], events, stats["marathon_wins"])
+        await ctx.send(f"Updated event for {player.display_name}:\n`{old_event_str}` → `{new_event_str}`")
+
+    @commands.command()
     async def marathonset(self, ctx, player: discord.Member, count: int):
         uid = str(player.id)
         stats = await self.get_user_stats(uid)
