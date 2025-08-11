@@ -13,6 +13,13 @@ TEAM_POINTS = {
 PRESET_TEAMS = ['Chaos', 'Revel', 'Hearth', 'Honor']
 MEMBER_CAP = 10
 
+TEAM_EMOJIS = {
+    'Chaos': ':chaos:',
+    'Revel': ':revel:',
+    'Hearth': ':hearth:',
+    'Honor': ':honor:',
+}
+
 class TeamCog(commands.Cog):
     def __init__(self, bot, pool):
         self.bot = bot
@@ -32,7 +39,7 @@ class TeamCog(commands.Cog):
 
     async def get_user_team(self, user_id: str):
         async with self.pool.acquire() as conn:
-            row = await conn.fetchrow("SELECT team_id FROM members WHERE user_id = $1", user_id)
+            row = await conn.fetchrow("SELECT team_id FROM team_members WHERE user_id = $1", user_id)
             return row['team_id'] if row else None
 
     async def get_team_name_by_id(self, team_id: int):
@@ -42,7 +49,7 @@ class TeamCog(commands.Cog):
 
     async def get_team_members(self, team_id: int):
         async with self.pool.acquire() as conn:
-            rows = await conn.fetch("SELECT user_id FROM members WHERE team_id = $1", team_id)
+            rows = await conn.fetch("SELECT user_id FROM team_members WHERE team_id = $1", team_id)
             return [r['user_id'] for r in rows]
 
     async def get_stats_for_users(self, user_ids):
@@ -91,7 +98,7 @@ class TeamCog(commands.Cog):
 
         async with self.pool.acquire() as conn:
             await conn.execute(
-                "INSERT INTO members (user_id, team_id) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET team_id = EXCLUDED.team_id",
+                "INSERT INTO team_members (user_id, team_id) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET team_id = EXCLUDED.team_id",
                 user_id, team_id
             )
         await ctx.send(f"✅ You joined team `{team_name}`!")
@@ -105,7 +112,7 @@ class TeamCog(commands.Cog):
             return
 
         async with self.pool.acquire() as conn:
-            await conn.execute("DELETE FROM members WHERE user_id = $1", user_id)
+            await conn.execute("DELETE FROM team_members WHERE user_id = $1", user_id)
 
         team_name = await self.get_team_name_by_id(current_team_id)
         await ctx.send(f"✅ You left the team `{team_name}`.")
@@ -113,6 +120,7 @@ class TeamCog(commands.Cog):
     @commands.command()
     async def teamstats(self, ctx, *, team_name: str = None):
         if team_name is None:
+            # Show user’s team stats if they are in a team
             user_id = str(ctx.author.id)
             team_id = await self.get_user_team(user_id)
             if team_id is None:
@@ -139,9 +147,11 @@ class TeamCog(commands.Cog):
         total_points = self.calculate_points(total_wins, total_br_placements)
 
         team_name = await self.get_team_name_by_id(team_id)
+        emoji = TEAM_EMOJIS.get(team_name, '')
+        display_name = f"{emoji} {team_name}" if emoji else team_name
 
         embed = discord.Embed(
-            title=f"Stats for Team {team_name}",
+            title=f"Stats for Team {display_name}",
             color=discord.Color.dark_teal()
         )
         embed.add_field(name="Total Wins", value=str(total_wins), inline=False)
@@ -150,6 +160,7 @@ class TeamCog(commands.Cog):
         embed.add_field(name="Total Points", value=str(total_points), inline=False)
         embed.add_field(name="Members Count", value=str(len(members)), inline=False)
 
+        # Show member mentions (up to 10)
         member_mentions = []
         for uid in members[:10]:
             member = ctx.guild.get_member(int(uid))
@@ -163,6 +174,7 @@ class TeamCog(commands.Cog):
 
     @commands.command()
     async def teamleaderboard(self, ctx):
+        # Get all teams
         async with self.pool.acquire() as conn:
             teams = await conn.fetch("SELECT id, name FROM teams")
 
@@ -192,7 +204,9 @@ class TeamCog(commands.Cog):
         )
 
         for idx, (team_name, points) in enumerate(leaderboard, start=1):
-            embed.add_field(name=f"{idx}. {team_name}", value=f"{points} points", inline=False)
+            emoji = TEAM_EMOJIS.get(team_name, '')
+            display_name = f"{emoji} {team_name}" if emoji else team_name
+            embed.add_field(name=f"{idx}. {display_name}", value=f"{points} points", inline=False)
 
         await ctx.send(embed=embed)
 
@@ -204,6 +218,5 @@ class TeamCog(commands.Cog):
             "- `!leave` - Leave your current team.\n"
             "- `!teamstats [team_name]` - Show stats of a team or your own team if no name provided.\n"
             "- `!teamleaderboard` - Show leaderboard of all teams by points.\n"
-            "- `!tlist` - Show this list of team commands."
         )
         await ctx.send(commands_list)
