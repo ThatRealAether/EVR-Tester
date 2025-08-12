@@ -2,32 +2,37 @@ import discord
 from discord.ext import commands
 from discord import app_commands, ui
 import asyncpg
-import asyncio
-import os
-import logging
+
+TEAM_EMOJIS = {
+    "Chaos": "<:chaos:1404549946694307924>",
+    "Revel": "<:revel:1404549965421871265>",
+    "Hearth": "<:hearth:1404549986850443334>",
+    "Honor": "<:honor:1404550005573943346>",
+}
 
 class TeamCog(commands.Cog):
-    TEAM_EMOJIS = {
-        "Chaos": "<:chaos:1404549946694307924>",
-        "Revel": "<:revel:1404549965421871265>",
-        "Hearth": "<:hearth:1404549986850443334>",
-        "Honor": "<:honor:1404550005573943346>",
-    }
+    TEAM_EMOJIS = TEAM_EMOJIS
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.Bot, pool: asyncpg.Pool = None):
         self.bot = bot
+        self.pool = pool
         self.tree = bot.tree
 
     async def cog_load(self):
         await self.bot.wait_until_ready()
         try:
             await self.tree.sync()
-            print(f"[TeamCog] Slash commands synced.")
+            print("[TeamCog] Slash commands synced.")
         except Exception as e:
             print(f"[TeamCog] Failed to sync slash commands: {e}")
 
+    async def _send(self, interaction_or_ctx, content):
+        if isinstance(interaction_or_ctx, discord.Interaction):
+            await interaction_or_ctx.response.send_message(content)
+        else:
+            await interaction_or_ctx.send(content)
+
     async def _register_team(self, interaction_or_ctx, team_name: str):
-        """Handles registering a team (shared between prefix + slash)."""
         if team_name not in self.TEAM_EMOJIS:
             msg = f"Invalid team name. Available teams: {', '.join(self.TEAM_EMOJIS.keys())}"
         else:
@@ -35,7 +40,7 @@ class TeamCog(commands.Cog):
         await self._send(interaction_or_ctx, msg)
 
     async def _show_team(self, interaction_or_ctx, member: discord.Member):
-        """Shows a member's team (shared between prefix + slash)."""
+        # For example, just showing Chaos team always; replace with real logic as needed
         team_name = "Chaos"
         if team_name:
             emoji = self.TEAM_EMOJIS.get(team_name, "")
@@ -43,13 +48,6 @@ class TeamCog(commands.Cog):
         else:
             msg = f"{member.display_name} is not registered to any team."
         await self._send(interaction_or_ctx, msg)
-
-    async def _send(self, interaction_or_ctx, content):
-        """Helper to send responses for both slash + prefix."""
-        if isinstance(interaction_or_ctx, discord.Interaction):
-            await interaction_or_ctx.response.send_message(content)
-        else:
-            await interaction_or_ctx.send(content)
 
     @commands.command(name="registerteam")
     async def register_team_prefix(self, ctx, team_name: str):
@@ -73,4 +71,6 @@ class TeamCog(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(TeamCog(bot))
+    # Pass your asyncpg pool here if you have one, or None
+    pool = getattr(bot, "pool", None)
+    await bot.add_cog(TeamCog(bot, pool))
