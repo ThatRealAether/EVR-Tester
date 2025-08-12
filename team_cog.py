@@ -13,14 +13,13 @@ TEAM_POINTS = {
 PRESET_TEAMS = ['Chaos', 'Revel', 'Hearth', 'Honor']
 MEMBER_CAP = 10
 
-TEAM_EMOJIS = {
+class TeamCog(commands.Cog):
+    TEAM_EMOJIS = {
     "Chaos": "<:chaos:1404549946694307924>",
     "Revel": "<:revel:1404549965421871265>",
     "Hearth": "<:hearth:1404549986850443334>",
     "Honor": "<:honor:1404550005573943346>",
 }
-
-class TeamCog(commands.Cog):
     def __init__(self, bot, pool):
         self.bot = bot
         self.pool = pool
