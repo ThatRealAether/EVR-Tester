@@ -194,48 +194,130 @@ class EventCog(commands.Cog):
 
     @commands.command()
     async def stats(self, ctx, player: discord.Member = None):
+        team_cog = self.get_cog("TeamCog")
+
         if player is None:
             stats = await self.get_stats()
             if not stats:
                 await ctx.send("No stats found yet.")
                 return
 
-            view = LeaderboardView(ctx, stats)
+            sorted_users = sorted(
+                stats.items(),
+                key=lambda item: (-item[1].get("wins", 0), -len(item[1].get("br_placements", [])))
+            )
+
+            per_page = 8
+            max_page = (len(sorted_users) - 1) // per_page + 1
+
+            class StatsLeaderboardView(ui.View):
+                def __init__(self):
+                    super().__init__(timeout=180)
+                    self.page = 1
+                    self.prev_button.disabled = True
+                    if max_page <= 1:
+                        self.next_button.disabled = True
+
+                async def update_embed(self):
+                    start = (self.page - 1) * per_page
+                    end = start + per_page
+                    page_users = sorted_users[start:end]
+
+                    embed = discord.Embed(
+                        title=f"🏆 Top Players by Wins (Page {self.page}/{max_page})",
+                        description="",
+                        color=discord.Color.dark_teal()
+                    )
+
+                    for idx, (uid, data) in enumerate(page_users, start=start + 1):
+                        member = ctx.guild.get_member(int(uid))
+                        if not member:
+                            try:
+                                member = await ctx.guild.fetch_member(int(uid))
+                            except:
+                                member = None
+                        mention = member.mention if member else f"<@{uid}>"
+
+                        team_display = ""
+                        if team_cog:
+                            team_id = await team_cog.get_user_team(uid)
+                            if team_id is not None:
+                                team_name = await team_cog.get_team_name_by_id(team_id)
+                                if team_name:
+                                    emoji = team_cog.TEAM_EMOJIS.get(team_name.lower())
+                                    if emoji:
+                                        team_display = f"{emoji} {team_name} | "
+
+                        wins = data.get("wins", 0)
+                        br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
+
+                        embed.description += f"**{idx}. {team_display}{mention}** — Wins: {wins}, BR Placements: {br_placements}\n\n"
+
+                    return embed
+
+                @ui.button(label="Previous", style=discord.ButtonStyle.blurple)
+                async def prev_button(self, interaction: discord.Interaction, button: ui.Button):
+                    if self.page > 1:
+                        self.page -= 1
+                    self.prev_button.disabled = self.page == 1
+                    self.next_button.disabled = False
+                    embed = await self.update_embed()
+                    await interaction.response.edit_message(embed=embed, view=self)
+
+                @ui.button(label="Next", style=discord.ButtonStyle.blurple)
+                async def next_button(self, interaction: discord.Interaction, button: ui.Button):
+                    if self.page < max_page:
+                        self.page += 1
+                    self.next_button.disabled = self.page == max_page
+                    self.prev_button.disabled = False
+                    embed = await self.update_embed()
+                    await interaction.response.edit_message(embed=embed, view=self)
+
+            view = StatsLeaderboardView()
             embed = await view.update_embed()
             await ctx.send(embed=embed, view=view)
-            return
 
-        uid = str(player.id)
-        data = await self.get_user_stats(uid)
-        if not data or (data["wins"] == 0 and not data["br_placements"] and not data["events"] and data["marathon_wins"] == 0):
-            await ctx.send(f"No stats found for {player.display_name}.")
-            return
+        else:
+            uid = str(player.id)
+            data = await self.get_user_stats(uid)
+            if not data or (data["wins"] == 0 and not data["br_placements"] and not data["events"] and data["marathon_wins"] == 0):
+                await ctx.send(f"No stats found for {player.display_name}.")
+                return
 
-        placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
-        events_list = data["events"] if data["events"] else []
-        marathon_wins = data["marathon_wins"]
-        mention = player.mention
+            team_display = ""
+            if team_cog:
+                team_id = await team_cog.get_user_team(uid)
+                if team_id is not None:
+                    team_name = await team_cog.get_team_name_by_id(team_id)
+                    if team_name:
+                        emoji = team_cog.TEAM_EMOJIS.get(team_name.lower())
+                        if emoji:
+                            team_display = f"{emoji} {team_name} "
 
-        display_events = ""
-        max_events_display = 10
-        events_to_show = events_list[-max_events_display:]
-        for e in events_to_show:
-            display_events += f"• {e}\n"
-        remaining = len(events_list) - max_events_display
-        if remaining > 0:
-            display_events += f"+{remaining} more..."
+            placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
+            events_list = data["events"] if data["events"] else []
+            marathon_wins = data["marathon_wins"]
 
-        embed = discord.Embed(
-            title=f"Stats for {player.display_name}",
-            color=discord.Color.dark_teal()
-        )
-        embed.add_field(name="Wins", value=str(data['wins']), inline=False)
-        embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
-        embed.add_field(name="Events", value=display_events if display_events else "None", inline=False)
-        if marathon_wins > 0:
-            embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
+            display_events = ""
+            max_events_display = 10
+            events_to_show = events_list[-max_events_display:]
+            for e in events_to_show:
+                display_events += f"• {e}\n"
+            remaining = len(events_list) - max_events_display
+            if remaining > 0:
+                display_events += f"+{remaining} more..."
 
-        await ctx.send(embed=embed)
+            embed = discord.Embed(
+                title=f"Stats for {team_display}{player.display_name}",
+                color=discord.Color.dark_teal()
+            )
+            embed.add_field(name="Wins", value=str(data['wins']), inline=False)
+            embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
+            embed.add_field(name="Events", value=display_events if display_events else "None", inline=False)
+            if marathon_wins > 0:
+                embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
+
+            await ctx.send(embed=embed)
 
     @commands.command()
     async def clearall(self, ctx, player: discord.Member):
