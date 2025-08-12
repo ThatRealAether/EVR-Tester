@@ -19,7 +19,7 @@ class TeamCog(commands.Cog):
     "Revel": "<:revel:1404549965421871265>",
     "Hearth": "<:hearth:1404549986850443334>",
     "Honor": "<:honor:1404550005573943346>",
-}
+    }
     def __init__(self, bot, pool):
         self.bot = bot
         self.pool = pool
