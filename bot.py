@@ -244,7 +244,7 @@ class EventCog(commands.Cog):
                             if team_id is not None:
                                 team_name = await team_cog.get_team_name_by_id(team_id)
                                 if team_name:
-                                    emoji = team_cog.TEAM_EMOJIS.get(team_name.lower())
+                                    emoji = team_cog.TEAM_EMOJIS.get(team_name)
                                     if emoji:
                                         team_display = f"{emoji} {team_name} | "
 
