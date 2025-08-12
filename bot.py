@@ -46,7 +46,7 @@ GAME_DATA = {
     "hook chasers": "## __Hook Chasers__\n"
                    "Hook Chasers is all about aerial tag, everyone except one random person every round. The tagger's goal is to tag everyone, the runner's goal is to run away, the time for each round ranges from 8-15 minutes depending on player count. The tagger gets points for tagging people, runners get points for time alive, the person with the least amount of points every round dies.",
     "karts": "## __Karts__\n"
-             "You and your peers are placed a racetrack, your goal is to not be in one of the last 2 positions when you finish, if you are, you get eliminated from the event. Each track has its own obstacles that you need to avoid ranging from icy floors, to giant pinballs in the sky."
+             "You and your peers are placed onto a racetrack, your goal is to not be in one of the last 2 positions when you finish, if you are, you get eliminated from the event. Each track has its own obstacles that you need to avoid ranging from icy floors, to giant pinballs in the sky."
 }
 
 def parse_event_date(event_str):
@@ -194,7 +194,7 @@ class EventCog(commands.Cog):
 
     @commands.command()
     async def stats(self, ctx, player: discord.Member = None):
-        team_cog = self.get_cog("TeamCog")
+        team_cog = self.bot.get_cog("TeamCog")
 
         if player is None:
             stats = await self.get_stats()
