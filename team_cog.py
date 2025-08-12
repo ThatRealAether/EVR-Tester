@@ -1,7 +1,10 @@
 import discord
 from discord.ext import commands
-from discord import ui
+from discord import app_commands, ui
 import asyncpg
+import asyncio
+import os
+import logging
 
 TEAM_POINTS = {
     '1st': 100,
@@ -14,19 +17,15 @@ PRESET_TEAMS = ['Chaos', 'Revel', 'Hearth', 'Honor']
 MEMBER_CAP = 10
 
 TEAM_EMOJIS = {
-"Chaos": "<:chaos:1404549946694307924>",
-"Revel": "<:revel:1404549965421871265>",
-"Hearth": "<:hearth:1404549986850443334>",
-"Honor": "<:honor:1404550005573943346>",
-}
-
-class TeamCog(commands.Cog):
-    TEAM_EMOJIS = {
     "Chaos": "<:chaos:1404549946694307924>",
     "Revel": "<:revel:1404549965421871265>",
     "Hearth": "<:hearth:1404549986850443334>",
     "Honor": "<:honor:1404550005573943346>",
-    }
+}
+
+class TeamCog(commands.Cog):
+    TEAM_EMOJIS = TEAM_EMOJIS
+
     def __init__(self, bot, pool):
         self.bot = bot
         self.pool = pool
@@ -37,9 +36,7 @@ class TeamCog(commands.Cog):
     async def user_has_events(self, user_id: str) -> bool:
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow("SELECT events FROM stats WHERE user_id = $1", user_id)
-            if row and row['events']:
-                return len(row['events']) > 0
-            return False
+            return bool(row and row['events'] and len(row['events']) > 0)
 
     async def get_team_id(self, team_name: str):
         async with self.pool.acquire() as conn:
@@ -65,14 +62,14 @@ class TeamCog(commands.Cog):
         if not user_ids:
             return {}
         async with self.pool.acquire() as conn:
-            rows = await conn.fetch("SELECT user_id, wins, br_placements FROM stats WHERE user_id = ANY($1::text[])", user_ids)
-            data = {}
-            for row in rows:
-                data[row['user_id']] = {
-                    "wins": row['wins'] or 0,
-                    "br_placements": row['br_placements'] or []
-                }
-            return data
+            rows = await conn.fetch(
+                "SELECT user_id, wins, br_placements FROM stats WHERE user_id = ANY($1::text[])",
+                user_ids
+            )
+            return {row['user_id']: {
+                "wins": row['wins'] or 0,
+                "br_placements": row['br_placements'] or []
+            } for row in rows}
 
     def calculate_points(self, wins, br_placements):
         points = wins * 100
@@ -80,7 +77,8 @@ class TeamCog(commands.Cog):
             points += TEAM_POINTS.get(placement.lower(), 0)
         return points
 
-    @commands.command()
+    @commands.hybrid_command(name="join", description="Join a preset team")
+    @app_commands.describe(team_name="Team to join (Chaos, Revel, Hearth, Honor)")
     async def join(self, ctx, *, team_name: str):
         user_id = str(ctx.author.id)
         team_name = team_name.strip()
@@ -107,12 +105,13 @@ class TeamCog(commands.Cog):
 
         async with self.pool.acquire() as conn:
             await conn.execute(
-                "INSERT INTO team_members (user_id, team_id) VALUES ($1, $2) ON CONFLICT (user_id) DO UPDATE SET team_id = EXCLUDED.team_id",
+                "INSERT INTO team_members (user_id, team_id) VALUES ($1, $2) "
+                "ON CONFLICT (user_id) DO UPDATE SET team_id = EXCLUDED.team_id",
                 user_id, team_id
             )
         await ctx.send(f"✅ You joined team {self.get_emoji_for_team(team_name)} `{team_name}`!")
 
-    @commands.command()
+    @commands.hybrid_command(name="leave", description="Leave your current team")
     async def leave(self, ctx):
         user_id = str(ctx.author.id)
         current_team_id = await self.get_user_team(user_id)
@@ -126,7 +125,8 @@ class TeamCog(commands.Cog):
         team_name = await self.get_team_name_by_id(current_team_id)
         await ctx.send(f"✅ You left the team {self.get_emoji_for_team(team_name)} `{team_name}`.")
 
-    @commands.command()
+    @commands.hybrid_command(name="teamstats", description="Show stats for a team")
+    @app_commands.describe(team_name="Team to check (leave blank for your own)")
     async def teamstats(self, ctx, *, team_name: str = None):
         if team_name is None:
             user_id = str(ctx.author.id)
@@ -148,10 +148,7 @@ class TeamCog(commands.Cog):
         stats = await self.get_stats_for_users(members)
 
         total_wins = sum(user.get("wins", 0) for user in stats.values())
-        total_br_placements = []
-        for user in stats.values():
-            total_br_placements.extend(user.get("br_placements", []))
-
+        total_br_placements = [p for user in stats.values() for p in user.get("br_placements", [])]
         total_points = self.calculate_points(total_wins, total_br_placements)
 
         team_name = await self.get_team_name_by_id(team_id)
@@ -167,18 +164,13 @@ class TeamCog(commands.Cog):
         embed.add_field(name="Total Points", value=str(total_points), inline=False)
         embed.add_field(name="Members Count", value=str(len(members)), inline=False)
 
-        member_mentions = []
-        for uid in members[:10]:
-            member = ctx.guild.get_member(int(uid))
-            if member:
-                member_mentions.append(member.mention)
-            else:
-                member_mentions.append(f"<@{uid}>")
+        member_mentions = [ctx.guild.get_member(int(uid)).mention if ctx.guild.get_member(int(uid)) else f"<@{uid}>"
+                           for uid in members[:10]]
         embed.add_field(name="Members", value=", ".join(member_mentions), inline=False)
 
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.hybrid_command(name="leaderboard", description="Show leaderboard of all teams")
     async def leaderboard(self, ctx):
         async with self.pool.acquire() as conn:
             teams = await conn.fetch("SELECT id, name FROM teams")
@@ -188,49 +180,32 @@ class TeamCog(commands.Cog):
             return
 
         leaderboard = []
-
         for team in teams:
-            team_id = team['id']
-            team_name = team['name']
-            members = await self.get_team_members(team_id)
+            members = await self.get_team_members(team['id'])
             stats = await self.get_stats_for_users(members)
-            total_wins = sum(user.get("wins", 0) for user in stats.values())
-            total_br_placements = []
-            for user in stats.values():
-                total_br_placements.extend(user.get("br_placements", []))
+            total_wins = sum(u.get("wins", 0) for u in stats.values())
+            total_br_placements = [p for u in stats.values() for p in u.get("br_placements", [])]
             total_points = self.calculate_points(total_wins, total_br_placements)
-            emoji = self.get_emoji_for_team(team_name)
-            leaderboard.append((emoji, team_name, total_points, members))
+            leaderboard.append((self.get_emoji_for_team(team['name']), team['name'], total_points, members))
 
         leaderboard.sort(key=lambda x: x[2], reverse=True)
 
-        embed = discord.Embed(
-            title="Team Leaderboard",
-            color=discord.Color.dark_teal()
-        )
-
+        embed = discord.Embed(title="Team Leaderboard", color=discord.Color.dark_teal())
         for idx, (emoji, team_name, points, members) in enumerate(leaderboard, start=1):
-            member_mentions = []
-            for uid in members:
-                member = ctx.guild.get_member(int(uid))
-                if member:
-                    member_mentions.append(member.mention)
-                else:
-                    member_mentions.append(f"<@{uid}>")
-
-            members_text = ", ".join(member_mentions) if member_mentions else "No members"
-
+            members_text = ", ".join(
+                ctx.guild.get_member(int(uid)).mention if ctx.guild.get_member(int(uid)) else f"<@{uid}>"
+                for uid in members
+            ) or "No members"
             embed.add_field(
                 name=f"{idx}. {emoji} {team_name} - {points} points",
                 value=f"Members:\n{members_text}",
                 inline=False
             )
-
             embed.add_field(name="\u200b", value="\u200b", inline=False)
 
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.hybrid_command(name="tlist", description="Show list of team commands")
     async def tlist(self, ctx):
         commands_list = (
             "**Team Commands:**\n"
@@ -240,3 +215,7 @@ class TeamCog(commands.Cog):
             "- **!leaderboard** - Show leaderboard of all teams by points.\n"
         )
         await ctx.send(commands_list)
+
+async def setup(bot):
+    pool = await asyncpg.create_pool(dsn="YOUR_DB_DSN")
+    await bot.add_cog(TeamCog(bot, pool))
