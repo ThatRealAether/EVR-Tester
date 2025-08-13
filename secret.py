@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from datetime import datetime, timedelta
 
 class Secret(commands.Cog):
     def __init__(self, bot):
@@ -28,9 +29,10 @@ class Secret(commands.Cog):
 
     @commands.command()
     async def ibrokearule(self, ctx):
-        try:
-            await ctx.author.timeout(duration=60, reason="ibrokearule command used")
-            await ctx.send(f"{ctx.author.mention}, you cant break rules thats bad.")
+    try:
+        until = datetime.utcnow() + timedelta(seconds=60)
+        await ctx.author.timeout(until=until, reason="ibrokearule command used")
+        await ctx.send(f"{ctx.author.mention}, you've been punished.")
         except Exception:
             await ctx.send(f"Can't timeout the bozo named {ctx.author.mention}. Idiot.")
 
