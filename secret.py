@@ -9,10 +9,10 @@ class Secret(commands.Cog):
     @commands.command()
     async def secret(self, ctx):
         commands_list = (
-            "**!vivziepop**\n\n"
-            "**!ibrokearule**\n\n"
-            "**!killaether**\n\n"
-            "**!omegaflowey**\n\n"
+            "**!vivziepop**\n"
+            "**!ibrokearule**\n"
+            "**!killaether**\n"
+            "**!omegaflowey**\n"
             "**!imstrong**"
         )
         await ctx.send(commands_list)
@@ -29,12 +29,12 @@ class Secret(commands.Cog):
 
     @commands.command()
     async def ibrokearule(self, ctx):
-    try:
-        until = datetime.utcnow() + timedelta(seconds=60)
-        await ctx.author.timeout(until=until, reason="ibrokearule command used")
-        await ctx.send(f"{ctx.author.mention}, you've been punished.")
+        try:
+            until = datetime.utcnow() + timedelta(seconds=60)
+            await ctx.author.timeout(until=until, reason="ibrokearule command used")
+            await ctx.send(f"HA LOSER IMAGINE BREAKING A RULEEEE")
         except Exception:
-            await ctx.send(f"Can't timeout the bozo named {ctx.author.mention}. Idiot.")
+            await ctx.send(f"I can't time out the bozo named {ctx.author.mention}. Idiot.")
 
     @commands.command()
     async def killaether(self, ctx):
