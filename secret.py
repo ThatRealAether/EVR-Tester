@@ -1,54 +1,46 @@
 import discord
 from discord.ext import commands
-from discord import app_commands
-from datetime import timedelta
 
 class Secret(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def secret(self, ctx):
-        """Lists the secret commands."""
-        commands_list = [
-            "!vivziepop @user",
-            "!ibrokearule",
-            "!killaether",
-            "!omegaflowey"
-        ]
-        await ctx.send("Secret commands:\n" + "\n".join(commands_list))
-
-    @commands.command(hidden=True)
-    async def vivziepop(self, ctx, member: discord.Member):
-        """Sends the... colorful message."""
-        msg = (
-            f"{member.mention} i fucking hope you FUCKING die because FUCK you "
-            f"i FUCKING want you FUCKING dead because FUCK you I FUCKING WANT FUCKING YOU "
-            f"FUCKING DEAD FUCKING RIGHT FUCKING NOW YOU FUCKING NERD"
+        commands_list = (
+            "**!vivziepop**\n"
+            "**!ibrokearule**\n"
+            "**!killaether**\n"
+            "**!omegaflowey**"
         )
-        await ctx.send(msg)
+        await ctx.send(commands_list)
 
-    @commands.command(hidden=True)
-    async def ibrokearule(self, ctx, member: discord.Member):
-        """Times out a user for 60 seconds."""
+    @commands.command()
+    async def vivziepop(self, ctx):
+        author_mention = ctx.author.mention
+        message = (
+            f"{author_mention} i fucking hope you FUCKING die because FUCK you i FUCKING want "
+            f"ou FUCKING dead because FUCK you I FUCKING WANT FUCKING YOU FUCKING DEAD "
+            f"FUCKING RIGHT FUCKING NOW YOU FUCKING NERD"
+        )
+        await ctx.send(message)
+
+    @commands.command()
+    async def ibrokearule(self, ctx):
         try:
-            await member.timeout(timedelta(seconds=60))
-            await ctx.send(f"{member.mention} has been timed out for 60 seconds.")
-        except discord.Forbidden:
-            await ctx.send("I don't have permission to timeout that user.")
-        except discord.HTTPException:
-            await ctx.send("Failed to timeout the user.")
+            await ctx.author.timeout(duration=60, reason="ibrokearule command used")
+            await ctx.send(f"{ctx.author.mention}, you have been timed out for 60 seconds.")
+        except Exception:
+            await ctx.send(f"Could not timeout {ctx.author.mention}. Do I have the right permissions?")
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def killaether(self, ctx):
-        """Sends 'i agree'."""
         await ctx.send("i agree")
 
-    @commands.command(hidden=True)
+    @commands.command()
     async def omegaflowey(self, ctx):
-        """Sends an image."""
-        await ctx.send("https://i.imgur.com/xzIaiDz.png")
-
+        image_url = "https://i.imgur.com/xzIaiDz.png"
+        await ctx.send(image_url)
 
 async def setup(bot):
     await bot.add_cog(Secret(bot))
