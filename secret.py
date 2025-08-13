@@ -47,7 +47,7 @@ class Secret(commands.Cog):
     @commands.command(hidden=True)
     async def omegaflowey(self, ctx):
         """Sends an image."""
-        await ctx.send("https://imgur.com/T6tVlLI")
+        await ctx.send("https://i.imgur.com/xzIaiDz.png")
 
 
 async def setup(bot):
