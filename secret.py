@@ -30,11 +30,12 @@ class Secret(commands.Cog):
     @commands.command()
     async def ibrokearule(self, ctx):
         try:
-            until = datetime.utcnow() + timedelta(seconds=60)
-            await ctx.author.timeout(until=until, reason="ibrokearule command used")
-            await ctx.send(f"HA LOSER IMAGINE BREAKING A RULEEEE")
-        except Exception:
-            await ctx.send(f"I can't time out the bozo named {ctx.author.mention}. Idiot.")
+            await ctx.author.timeout(duration=timedelta(seconds=60))
+            await ctx.send("LOSER IMAGINE BREAKING A RULE LMAOOOO")
+        except discord.Forbidden:
+            await ctx.send("I can't time you out, idiot")
+        except discord.HTTPException:
+            await ctx.send("I don't think you *really* broke a rule, did you?")
 
     @commands.command()
     async def killaether(self, ctx):
