@@ -1,6 +1,7 @@
+from datetime import timedelta
 import discord
 from discord.ext import commands
-from datetime import datetime, timedelta
+from discord.utils import utcnow
 
 class Secret(commands.Cog):
     def __init__(self, bot):
@@ -30,7 +31,7 @@ class Secret(commands.Cog):
     @commands.command()
     async def ibrokearule(self, ctx):
         try:
-            until = datetime.utcnow() + timedelta(seconds=60)
+            until = utcnow() + timedelta(seconds=60)
             await ctx.author.timeout(until)
             await ctx.send("LOSER IMAGINE BREAKING A RULE LMAOOOO")
         except discord.Forbidden:
