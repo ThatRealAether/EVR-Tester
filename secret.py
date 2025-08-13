@@ -30,7 +30,8 @@ class Secret(commands.Cog):
     @commands.command()
     async def ibrokearule(self, ctx):
         try:
-            await ctx.author.timeout(duration=timedelta(seconds=60))
+            until = datetime.utcnow() + timedelta(seconds=60)
+            await ctx.author.timeout(until=until)
             await ctx.send("LOSER IMAGINE BREAKING A RULE LMAOOOO")
         except discord.Forbidden:
             await ctx.send("I can't time you out, idiot")
