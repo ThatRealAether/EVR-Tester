@@ -579,6 +579,18 @@ async def main():
     pool = await asyncpg.create_pool(DATABASE_URL)
     bot = DiscordBot(pool)
 
+    extensions = [
+        "secret",
+        "slash_commands"
+    ]
+
+    for ext in extensions:
+        try:
+            await bot.load_extension(ext)
+            print(f"Loaded extension: {ext}")
+        except Exception as e:
+            print(f"Failed to load extension {ext}: {e}")
+
     await bot.start(TOKEN)
 
 
