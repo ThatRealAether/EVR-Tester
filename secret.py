@@ -2,6 +2,7 @@ from datetime import timedelta
 import discord
 from discord.ext import commands
 from discord.utils import utcnow
+import random
 
 class Secret(commands.Cog):
     def __init__(self, bot):
@@ -14,7 +15,8 @@ class Secret(commands.Cog):
             "**!ibrokearule**\n"
             "**!killaether**\n"
             "**!omegaflowey**\n"
-            "**!imstrong**"
+            "**!imstrong**\n"
+            "**!rannum**"
         )
         await ctx.send(commands_list)
 
@@ -52,6 +54,11 @@ class Secret(commands.Cog):
     async def imstrong(self, ctx):
         gif_url = "https://tenor.com/view/goku-prowler-goku-goku-mad-goku-dbs-dbs-gif-11120329515669448575"
         await ctx.send(gif_url)
+
+    @commands.command()
+    async def rannum(self, ctx):
+        num = random.randint(1, 10**30)
+        await ctx.send(f"{num}")
 
 async def setup(bot):
     await bot.add_cog(Secret(bot))
