@@ -29,9 +29,9 @@ class Secret(commands.Cog):
     async def ibrokearule(self, ctx):
         try:
             await ctx.author.timeout(duration=60, reason="ibrokearule command used")
-            await ctx.send(f"{ctx.author.mention}, you have been timed out for 60 seconds.")
+            await ctx.send(f"{ctx.author.mention}, you cant break rules thats bad.")
         except Exception:
-            await ctx.send(f"Could not timeout {ctx.author.mention}. Do I have the right permissions?")
+            await ctx.send(f"Can't timeout the bozo named {ctx.author.mention}. Idiot.")
 
     @commands.command()
     async def killaether(self, ctx):
