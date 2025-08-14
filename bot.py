@@ -226,8 +226,8 @@ class EventCog(commands.Cog):
             return
 
         featured_wins.append(event_name)
-    
         stats["featured_wins"] = featured_wins
+
         await self.save_user_stats(
             uid,
             stats["wins"],
@@ -371,13 +371,16 @@ class EventCog(commands.Cog):
                 color=discord.Color.dark_teal()
             )
             embed.add_field(name="Wins", value=str(data['wins']), inline=False)
-            embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
-            embed.add_field(name="Events", value=display_events if display_events else "None", inline=False)
 
             if featured_wins:
-                feat_display = "\n".join(f"• {e}" for e in featured_wins)
-                embed.add_field(name="🌟 Featured Wins", value=feat_display, inline=False)
+                embed.add_field(
+                    name="Featured Wins",
+                    value="\n".join(f"• {f}" for f in featured_wins),
+                    inline=False
+                )
 
+            embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
+            embed.add_field(name="Events", value=display_events if display_events else "None", inline=False)
             if marathon_wins > 0:
                 embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
 
