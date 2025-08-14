@@ -113,7 +113,8 @@ class EventCog(commands.Cog):
             "- **!stats [@user]** - Displays the stats of a specific user\n"
             "- **!index** — Show list of game modes (reply with name to see description)\n"
             "- **!search <game name>** — Show winners of a specific game mode\n"
-            "- **!tlist** - Show the list of team commands.\n"
+            "- **!allevents [@user]** - Lists every event registered under a user\n"
+            "- **!tlist** - Show the list of team commands"
         )
         await ctx.send(help_text)
     
@@ -122,13 +123,13 @@ class EventCog(commands.Cog):
         dev_text = (
             "# __Dev Commands__\n"
             "- **!eventreg** - Log an event\n"
-            "- **!bulkreg** - Same format as !eventreg - br logic\n"
+            "- **!bulkreg** - Same format as !eventreg minus br logic\n"
             " `• Example: !eventreg @User Cooking false 7/25`\n"
             " `• Example: !eventreg @User PVP true 1st 7/25`\n"
             "- **!editentry** - Edit an entry of an event\n"
             " `• Example: !editentry @User Cooking 5/6 => Cooking 5/6/2024`\n"
             "- **!clearall [@user]** — Clear all stats for a user\n"
-            "- **!clearrec [@user]** — Clear most recent stat for a user\n"
+            "- **!clearrec [@user]** — Clear most recent stat for a user"
         )
         await ctx.send(dev_text)
 
@@ -189,7 +190,7 @@ class EventCog(commands.Cog):
         await ctx.send(f"Set Marathon Wins for {player.display_name} to {marathon_wins}.")
 
     @commands.command()
-    async def allstats(self, ctx, player: discord.Member):
+    async def allevents(self, ctx, player: discord.Member):
         uid = str(player.id)
         data = await self.get_user_stats(uid)
 
