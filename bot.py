@@ -93,6 +93,22 @@ class EventCog(commands.Cog):
                 }
             return data
 
+    async def get_user_stats(self, user_id):
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT wins, br_placements, events, marathon_wins FROM stats WHERE user_id=$1",
+                user_id
+            )
+            if row:
+                return {
+                    "wins": row['wins'],
+                    "br_placements": row['br_placements'] or [],
+                    "events": row['events'] or [],
+                    "marathon_wins": row['marathon_wins'] or 0,
+                }
+            else:
+                return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
+
     async def get_featured_wins(self, uid):
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow("SELECT wins FROM featured_wins WHERE userid=$1", int(uid))
@@ -108,15 +124,6 @@ class EventCog(commands.Cog):
                 int(uid),
                 json.dumps(wins_list)
             )
-
-    async def get_featured_wins(self, uid):
-        async with self.pool.acquire() as conn:
-            row = await conn.fetchrow("""
-                SELECT wins
-                FROM featured_wins
-                WHERE userid = $1
-            """, uid)
-            return row['wins'] if row else []
 
     @commands.command()
     async def list(self, ctx):
