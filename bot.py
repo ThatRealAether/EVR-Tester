@@ -88,12 +88,20 @@ class EventCog(commands.Cog):
                 user_id
             )
             if row:
+                def to_list(val):
+                    if isinstance(val, list):
+                        return val
+                    elif isinstance(val, str) and val:
+                        return val.split(", ")
+                    else:
+                        return []
+
                 return {
                     "wins": row['wins'],
-                    "br_placements": row['br_placements'].split(", ") if row['br_placements'] else [],
-                    "events": row['events'].split(", ") if row['events'] else [],
+                    "br_placements": to_list(row['br_placements']),
+                    "events": to_list(row['events']),
                     "marathon_wins": row['marathon_wins'] or 0,
-                    "featured_wins": row['featured_wins'].split(", ") if row['featured_wins'] else []
+                    "featured_wins": to_list(row['featured_wins'])
                 }
             else:
                 return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0, "featured_wins": []}
@@ -103,14 +111,23 @@ class EventCog(commands.Cog):
             rows = await conn.fetch("SELECT user_id, wins, br_placements, events, marathon_wins, featured_wins FROM stats")
             data = {}
             for row in rows:
+                def to_list(val):
+                    if isinstance(val, list):
+                        return val
+                    elif isinstance(val, str) and val:
+                        return val.split(", ")
+                    else:
+                        return []
+
                 data[row['user_id']] = {
                     "wins": row['wins'],
-                    "br_placements": row['br_placements'].split(", ") if row['br_placements'] else [],
-                    "events": row['events'].split(", ") if row['events'] else [],
+                    "br_placements": to_list(row['br_placements']),
+                    "events": to_list(row['events']),
                     "marathon_wins": row['marathon_wins'] or 0,
-                    "featured_wins": row['featured_wins'].split(", ") if row['featured_wins'] else []
+                    "featured_wins": to_list(row['featured_wins'])
                 }
             return data
+
 
     @commands.command()
     async def list(self, ctx):
