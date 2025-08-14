@@ -119,13 +119,13 @@ class EventCog(commands.Cog):
             "- **!tlist** - Show this list of team commands.\n"
             "## __Dev Commands__\n"
             "- **!eventreg** - Log an event\n"
+            "- **!bulkreg** - Same format as !eventreg - br logic\n"
             " • Example: !eventreg @User Cooking false 7/25\n"
             " • Example: !eventreg @User PVP true 1st 7/25\n"
             "- **!editentry** - Edit an entry of an event\n"
             "• Example: !editentry @User Cooking 5/6 => Cooking 5/6/2024\n"
             "- **!clearall [@user]** — Clear all stats for a user\n"
             "- **!clearrec [@user]** — Clear most recent stat for a user\n"
-            "- **!marathonset @User <number>** — Set Marathon Wins for a user\n"
         )
         await ctx.send(help_text)
 
