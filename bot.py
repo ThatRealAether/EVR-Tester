@@ -100,8 +100,8 @@ class EventCog(commands.Cog):
                 user_id
             )
             if row:
-                events = row['events'] or []
                 br_placements = row['br_placements'] or []
+                events = row['events'] or []
 
                 br_wins = sum(1 for placement in br_placements if placement == "1st")
                 total_wins = len(events) + br_wins
@@ -112,9 +112,9 @@ class EventCog(commands.Cog):
                     "events": events,
                     "marathon_wins": row['marathon_wins'] or 0,
                 }
-                else:
-                    return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
-                    
+            else:
+                return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
+    
     async def get_featured_wins(self, uid):
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow("SELECT wins FROM featured_wins WHERE userid=$1", int(uid))
