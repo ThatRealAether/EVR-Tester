@@ -313,20 +313,29 @@ class EventCog(commands.Cog):
         await ctx.send(f"All stats cleared for {player.display_name}.")
 
     @commands.command()
-    async def bulkreg(self, ctx, *players: discord.Member, event_name: str, date: str = None):
+    async def bulkreg(self, ctx, *args):
+        if len(args) < 3:
+            await ctx.send("Usage: !bulkreg @user1 @user2 ... EventName Date")
+            return
+
+        date = args[-1]
+        event_name = args[-2]
+        players = []
+        for mention in args[:-2]:
+            try:
+                member = await commands.MemberConverter().convert(ctx, mention)
+                players.append(member)
+            except:
+                continue
+
         if len(players) == 0:
-            await ctx.send("Registered **{event_name}** for Casper the Ghost on {date}. SPECIFY USERS DUMBASS :sob:")
+            await ctx.send(f"Registered **{event_name}** for Casper the Ghost on {date}. SPECIFY USERS DUMBASS :sob:")
             return
         if len(players) == 1:
             await ctx.send("Please use !eventreg for single wins.")
             return
-        if date is None:
-            await ctx.send("You must specify the date for the event. Example:\n!bulkreg @user1 @user2 ... EventName 7/25")
-            return
 
-        registered_mentions = []
         event_entry = f"{event_name} (Date: {date})"
-
         for player in players:
             uid = str(player.id)
             stats = await self.get_user_stats(uid)
@@ -337,12 +346,11 @@ class EventCog(commands.Cog):
 
             events.append(event_entry)
             wins += 1
-
             await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
-            registered_mentions.append(player.mention)
 
-        mentions_text = "\n• ".join(registered_mentions)
+        mentions_text = "\n• ".join(p.mention for p in players)
         await ctx.send(f"Recorded **{event_name}** for the following users on {date}:\n• {mentions_text}")
+
 
     @commands.command()
     async def clearrec(self, ctx, player: discord.Member):
