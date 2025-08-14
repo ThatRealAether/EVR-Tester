@@ -164,9 +164,6 @@ class EventCog(commands.Cog):
 
         await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
 
-    import re
-from datetime import datetime
-
     @commands.command()
     async def editreg(self, ctx, player: discord.Member, *, args: str):
         uid = str(player.id)
