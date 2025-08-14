@@ -66,7 +66,9 @@ class EventCog(commands.Cog):
 
     async def get_stats(self):
         async with self.pool.acquire() as conn:
-            rows = await conn.fetch("SELECT user_id, wins, br_placements, events, marathon_wins FROM stats")
+            rows = await conn.fetch(
+                "SELECT user_id, wins, br_placements, events, marathon_wins, featured_wins FROM stats"
+            )
             data = {}
             for row in rows:
                 data[row['user_id']] = {
@@ -74,13 +76,15 @@ class EventCog(commands.Cog):
                     "br_placements": row['br_placements'] or [],
                     "events": row['events'] or [],
                     "marathon_wins": row['marathon_wins'] or 0,
+                    "featured_wins": row['featured_wins'] or []
                 }
             return data
+
 
     async def get_user_stats(self, user_id):
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
-                "SELECT wins, br_placements, events, marathon_wins FROM stats WHERE user_id=$1",
+                "SELECT wins, br_placements, events, marathon_wins, featured_wins FROM stats WHERE user_id=$1",
                 user_id
             )
             if row:
@@ -89,21 +93,33 @@ class EventCog(commands.Cog):
                     "br_placements": row['br_placements'] or [],
                     "events": row['events'] or [],
                     "marathon_wins": row['marathon_wins'] or 0,
+                    "featured_wins": row['featured_wins'] or []
                 }
             else:
-                return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
+                return {
+                    "wins": 0,
+                    "br_placements": [],
+                    "events": [],
+                    "marathon_wins": 0,
+                    "featured_wins": []
+                }
 
-    async def save_user_stats(self, user_id, wins, br_placements_list, events_list, marathon_wins):
+    async def save_user_stats(self, uid, wins, br_placements, events, marathon_wins, featured_wins=None):
+        if featured_wins is None:
+            featured_wins = []
+
         async with self.pool.acquire() as conn:
             await conn.execute("""
-                INSERT INTO stats (user_id, wins, br_placements, events, marathon_wins)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO stats (user_id, wins, br_placements, events, marathon_wins, featured_wins)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT (user_id) DO UPDATE
                 SET wins = EXCLUDED.wins,
                     br_placements = EXCLUDED.br_placements,
                     events = EXCLUDED.events,
-                    marathon_wins = EXCLUDED.marathon_wins
-            """, user_id, wins, br_placements_list, events_list, marathon_wins)
+                    marathon_wins = EXCLUDED.marathon_wins,
+                    featured_wins = EXCLUDED.featured_wins
+            """, uid, br_placements, events, wins, marathon_wins, featured_wins)
+
 
     @commands.command()
     async def list(self, ctx):
