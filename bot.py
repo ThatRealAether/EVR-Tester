@@ -287,7 +287,7 @@ class EventCog(commands.Cog):
             marathon_wins = data["marathon_wins"]
             display_events = ""
             max_events_display = 10
-            events_to_show = events_list[-max_events_display:]
+            events_to_show = events_list[-max_events_display:][::-1]  # last N events, newest first
             for e in events_to_show:
                 display_events += f"• {e}\n"
             remaining = len(events_list) - max_events_display
