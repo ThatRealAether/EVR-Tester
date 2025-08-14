@@ -121,7 +121,7 @@ class EventCog(commands.Cog):
         await ctx.send(help_text)
     
     @commands.command()
-    async def list(self, ctx):
+    async def devlist(self, ctx):
         dev_text = (
             "# __Dev Commands__\n"
             "- **!eventreg** - Log an event\n"
