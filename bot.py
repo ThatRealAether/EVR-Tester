@@ -117,17 +117,23 @@ class EventCog(commands.Cog):
             "- **!index** — Show list of game modes (reply with name to see description)\n"
             "- **!search <game name>** — Show winners of a specific game mode\n"
             "- **!tlist** - Show this list of team commands.\n"
-            "## __Dev Commands__\n"
+        )
+        await ctx.send(help_text)
+    
+    @commands.command()
+    async def list(self, ctx):
+        dev_text = (
+            "# __Dev Commands__\n"
             "- **!eventreg** - Log an event\n"
             "- **!bulkreg** - Same format as !eventreg - br logic\n"
-            " • Example: !eventreg @User Cooking false 7/25\n"
-            " • Example: !eventreg @User PVP true 1st 7/25\n"
+            " `• Example: !eventreg @User Cooking false 7/25`\n"
+            " `• Example: !eventreg @User PVP true 1st 7/25`\n"
             "- **!editentry** - Edit an entry of an event\n"
-            "• Example: !editentry @User Cooking 5/6 => Cooking 5/6/2024\n"
+            " `• Example: !editentry @User Cooking 5/6 => Cooking 5/6/2024`\n"
             "- **!clearall [@user]** — Clear all stats for a user\n"
             "- **!clearrec [@user]** — Clear most recent stat for a user\n"
         )
-        await ctx.send(help_text)
+        await ctx.send(dev_text)
 
     @commands.command()
     async def eventreg(self, ctx, player: discord.Member, event_name: str, is_battle_royal: str, placement_or_date: str = None, date: str = None):
