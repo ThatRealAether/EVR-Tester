@@ -126,7 +126,7 @@ class EventCog(commands.Cog):
             "- **!bulkreg** - Same format as !eventreg minus br logic\n"
             " `• Example: !eventreg @User Cooking false 7/25`\n"
             " `• Example: !eventreg @User PVP true 1st 7/25`\n"
-            "- **!editentry** - Edit an entry of an event\n"
+            "- **!editreg** - Edit an entry of an event\n"
             " `• Example: !editentry @User Cooking 5/6 => Cooking 5/6/2024`\n"
             "- **!clearall [@user]** — Clear all stats for a user\n"
             "- **!clearrec [@user]** — Clear most recent stat for a user"
@@ -165,7 +165,7 @@ class EventCog(commands.Cog):
         await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
 
     @commands.command()
-    async def editentry(self, ctx, player: discord.Member, *, args: str):
+    async def editreg(self, ctx, player: discord.Member, *, args: str):
         uid = str(player.id)
         if "=>" not in args:
             await ctx.send("You must separate the old and new event strings with =>.")
