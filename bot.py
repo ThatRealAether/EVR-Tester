@@ -526,6 +526,36 @@ class LeaderboardView(ui.View):
         embed = await self.update_embed()
         await interaction.response.edit_message(embed=embed, view=self)
 
+class SlashCommands(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+        @discord.app_commands.command(name="ping", description="Check if the bot is online")
+        async def ping(self, interaction: discord.Interaction):
+            await interaction.response.send_message("Pong!")
+
+        @discord.app_commands.command(name="stats", description="Get stats for a user")
+        @discord.app_commands.describe(user="The user to check stats for")
+        async def stats(self, interaction: discord.Interaction, user: discord.Member = None):
+            event_cog = self.bot.get_cog("EventCog")
+            if not event_cog:
+                await interaction.response.send_message("Stats system not loaded.")
+                return
+
+            if user is None:
+                await interaction.response.send_message("You must mention a user for slash stats.")
+            else:
+                uid = str(user.id)
+                data = await event_cog.get_user_stats(uid)
+                if not data or (data["wins"] == 0 and not data["br_placements"] and not data["events"] and data["marathon_wins"] == 0):
+                    await interaction.response.send_message(f"No stats found for {user.display_name}.")
+                    return
+                await interaction.response.send_message(f"{user.display_name} has {data['wins']} wins.")
+
+async def setup_slash(bot):
+    await bot.add_cog(SlashCommands(bot))
+    await bot.tree.sync()
+
 class DiscordBot(commands.Bot):
     def __init__(self, pool):
         intents = discord.Intents.default()
@@ -538,6 +568,7 @@ class DiscordBot(commands.Bot):
     async def setup_hook(self):
         await self.add_cog(EventCog(self, self.pool))
         await self.add_cog(TeamCog(self, self.pool))
+        await setup_slash(self)
         self.logger.info("Cog loaded.")
 
     async def on_ready(self):
