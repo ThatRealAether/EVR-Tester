@@ -94,26 +94,26 @@ class EventCog(commands.Cog):
             return data
 
     async def get_user_stats(self, user_id):
-    async with self.pool.acquire() as conn:
-        row = await conn.fetchrow(
-            "SELECT wins, br_placements, events, marathon_wins FROM stats WHERE user_id=$1",
-            user_id
-        )
-        if row:
-            br_placements = row['br_placements'] or []
-            events = row['events'] or []
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT wins, br_placements, events, marathon_wins FROM stats WHERE user_id=$1",
+                user_id
+            )
+            if row:
+                br_placements = row['br_placements'] or []
+                events = row['events'] or []
 
-            br_wins = sum(1 for placement in br_placements if placement == "1st")
-            total_wins = len(events) + br_wins
+                br_wins = sum(1 for placement in br_placements if placement == "1st")
+                total_wins = len(events) + br_wins
 
-            return {
-                "wins": total_wins,
-                "br_placements": br_placements,
-                "events": events,
-                "marathon_wins": row['marathon_wins'] or 0,
-            }
-        else:
-            return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
+                return {
+                    "wins": total_wins,
+                    "br_placements": br_placements,
+                    "events": events,
+                    "marathon_wins": row['marathon_wins'] or 0,
+                }
+            else:
+                return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
 
     @commands.command()
     async def list(self, ctx):
