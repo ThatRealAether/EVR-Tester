@@ -64,50 +64,11 @@ class EventCog(commands.Cog):
         self.bot = bot
         self.pool = pool
 
-    async def get_stats(self):
-        async with self.pool.acquire() as conn:
-            rows = await conn.fetch(
-                "SELECT user_id, wins, br_placements, events, marathon_wins, featured_wins FROM stats"
-            )
-            data = {}
-            for row in rows:
-                data[row['user_id']] = {
-                    "wins": row['wins'],
-                    "br_placements": row['br_placements'] or [],
-                    "events": row['events'] or [],
-                    "marathon_wins": row['marathon_wins'] or 0,
-                    "featured_wins": row['featured_wins'] or []
-                }
-            return data
-
-
-    async def get_user_stats(self, user_id):
-        async with self.pool.acquire() as conn:
-            row = await conn.fetchrow(
-                "SELECT wins, br_placements, events, marathon_wins, featured_wins FROM stats WHERE user_id=$1",
-                user_id
-            )
-            if row:
-                return {
-                    "wins": row['wins'],
-                    "br_placements": row['br_placements'] or [],
-                    "events": row['events'] or [],
-                    "marathon_wins": row['marathon_wins'] or 0,
-                    "featured_wins": row['featured_wins'] or []
-                }
-            else:
-                return {
-                    "wins": 0,
-                    "br_placements": [],
-                    "events": [],
-                    "marathon_wins": 0,
-                    "featured_wins": []
-                }
-
     async def save_user_stats(self, uid, wins, br_placements, events, marathon_wins, featured_wins=None):
-        if featured_wins is None:
-            featured_wins = []
-
+        featured_wins_str = ", ".join(featured_wins) if featured_wins else ""
+        br_placements_str = ", ".join(br_placements) if br_placements else ""
+        events_str = ", ".join(events) if events else ""
+    
         async with self.pool.acquire() as conn:
             await conn.execute("""
                 INSERT INTO stats (user_id, wins, br_placements, events, marathon_wins, featured_wins)
@@ -118,8 +79,38 @@ class EventCog(commands.Cog):
                     events = EXCLUDED.events,
                     marathon_wins = EXCLUDED.marathon_wins,
                     featured_wins = EXCLUDED.featured_wins
-            """, uid, wins, br_placements, events, marathon_wins, featured_wins)
+            """, uid, wins, br_placements_str, events_str, marathon_wins, featured_wins_str)
 
+    async def get_user_stats(self, user_id):
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow(
+                "SELECT wins, br_placements, events, marathon_wins, featured_wins FROM stats WHERE user_id=$1",
+                user_id
+            )
+            if row:
+                return {
+                    "wins": row['wins'],
+                    "br_placements": row['br_placements'].split(", ") if row['br_placements'] else [],
+                    "events": row['events'].split(", ") if row['events'] else [],
+                    "marathon_wins": row['marathon_wins'] or 0,
+                    "featured_wins": row['featured_wins'].split(", ") if row['featured_wins'] else []
+                }
+            else:
+                return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0, "featured_wins": []}
+
+    async def get_stats(self):
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch("SELECT user_id, wins, br_placements, events, marathon_wins, featured_wins FROM stats")
+            data = {}
+            for row in rows:
+                data[row['user_id']] = {
+                    "wins": row['wins'],
+                    "br_placements": row['br_placements'].split(", ") if row['br_placements'] else [],
+                    "events": row['events'].split(", ") if row['events'] else [],
+                    "marathon_wins": row['marathon_wins'] or 0,
+                    "featured_wins": row['featured_wins'].split(", ") if row['featured_wins'] else []
+                }
+            return data
 
     @commands.command()
     async def list(self, ctx):
