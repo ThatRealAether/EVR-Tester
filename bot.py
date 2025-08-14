@@ -111,9 +111,9 @@ class EventCog(commands.Cog):
     async def save_featured_wins(self, uid, wins_list):
         async with self.pool.acquire() as conn:
             await conn.execute("""
-                INSERT INTO featured_wins (user_id, wins)
+                INSERT INTO featured_wins (userid, wins)
                 VALUES ($1, $2)
-                ON CONFLICT (user_id) DO UPDATE
+                ON CONFLICT (userid) DO UPDATE
                 SET wins = EXCLUDED.wins
             """, uid, wins_list)
 
@@ -122,7 +122,7 @@ class EventCog(commands.Cog):
             row = await conn.fetchrow("""
                 SELECT wins
                 FROM featured_wins
-                WHERE user_id = $1
+                WHERE userid = $1
             """, uid)
             return row['wins'] if row else []
 
@@ -239,12 +239,12 @@ class EventCog(commands.Cog):
 
         async with self.pool.acquire() as conn:
             await conn.execute("""
-                INSERT INTO featured_wins (user_id, wins)
+                INSERT INTO featured_wins (userid, wins)
                 VALUES ($1, '{}')
-                ON CONFLICT (user_id) DO NOTHING
+                ON CONFLICT (userid) DO NOTHING
             """, int(uid))
 
-            row = await conn.fetchrow("SELECT wins FROM featured_wins WHERE user_id=$1", int(uid))
+            row = await conn.fetchrow("SELECT wins FROM featured_wins WHERE userid=$1", int(uid))
             featured = row['wins'] if row else []
 
             if event_str in featured:
@@ -256,7 +256,7 @@ class EventCog(commands.Cog):
 
             featured.append(event_str)
 
-            await conn.execute("UPDATE featured_wins SET wins=$1 WHERE user_id=$2", featured, int(uid))
+            await conn.execute("UPDATE featured_wins SET wins=$1 WHERE userid=$2", featured, int(uid))
     
         await ctx.send(f"Added featured win for {player.display_name}: {event_str}")
 
