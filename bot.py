@@ -65,16 +65,19 @@ class EventCog(commands.Cog):
         self.pool = pool
 
     async def save_user_stats(self, uid, wins, br_placements, events, marathon_wins):
-    async with self.pool.acquire() as conn:
-        await conn.execute("""
-            INSERT INTO stats (user_id, wins, br_placements, events, marathon_wins)
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (user_id) DO UPDATE
-            SET wins = EXCLUDED.wins,
-                br_placements = EXCLUDED.br_placements,
-                events = EXCLUDED.events,
-                marathon_wins = EXCLUDED.marathon_wins
-        """, uid, wins, br_placements, events, marathon_wins)
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO stats (user_id, wins, br_placements, events, marathon_wins)
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (user_id) DO UPDATE
+                SET wins = EXCLUDED.wins,
+                    br_placements = EXCLUDED.br_placements,
+                    events = EXCLUDED.events,
+                    marathon_wins = EXCLUDED.marathon_wins
+                """,
+                uid, wins, br_placements, events, marathon_wins
+            )
 
     async def get_stats(self):
         async with self.pool.acquire() as conn:
