@@ -108,6 +108,24 @@ class EventCog(commands.Cog):
             else:
                 return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
 
+    async def save_featured_wins(self, uid, wins_list):
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO featured_wins (user_id, wins)
+                VALUES ($1, $2)
+                ON CONFLICT (user_id) DO UPDATE
+                SET wins = EXCLUDED.wins
+            """, uid, wins_list)
+
+    async def get_featured_wins(self, uid):
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow("""
+                SELECT wins
+                FROM featured_wins
+                WHERE user_id = $1
+            """, uid)
+            return row['wins'] if row else []
+
     @commands.command()
     async def list(self, ctx):
         help_text = (
@@ -212,33 +230,21 @@ class EventCog(commands.Cog):
         await self.save_user_stats(uid, stats['wins'], stats['br_placements'], stats['events'], marathon_wins)
         await ctx.send(f"Set Marathon Wins for {player.display_name} to {marathon_wins}.")
 
-    @commands.command()
-    async def featadd(self, ctx, player: discord.Member, *, feat_win: str):
-        """Add a featured win for a user (up to 3)."""
-        uid = str(player.id)
-        data = await self.get_user_stats(uid)
+    @commands.command(name="featadd")
+    async def featadd(self, ctx, member: discord.Member, *, win_text: str):
+        """Add a featured win for a user."""
+        user_id = member.id
+        win_entry = win_text.strip()
 
-        featured_wins = data.get("featured_wins", [])
-        if not isinstance(featured_wins, list):
-            featured_wins = []
+        async with self.pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO featured_wins (user_id, wins)
+                VALUES ($1, ARRAY[$2])
+                ON CONFLICT (user_id) DO UPDATE
+                SET wins = array_append(featured_wins.wins, $2)
+            """, user_id, win_entry)
 
-        if len(featured_wins) >= 3:
-            await ctx.send(f"{player.display_name} already has 3 featured wins. Remove one before adding another.")
-            return
-
-        featured_wins.append(feat_win)
-
-        await self.save_user_stats(
-            uid,
-            data["wins"],
-            data["br_placements"],
-            data["events"],
-            data["marathon_wins"],
-            featured_wins=featured_wins
-        )
-
-        await ctx.send(f"Added featured win for {player.display_name}: `{feat_win}`.\nThey now have {len(featured_wins)}/3 featured wins.")
-
+        await ctx.send(f"✅ Added featured win for {member.display_name}: `{win_entry}`")
 
     @commands.command()
     async def allevents(self, ctx, player: discord.Member):
