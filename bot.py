@@ -177,33 +177,34 @@ from datetime import datetime
 
         old_event_str, new_event_str = map(str.strip, args.split("=>", 1))
 
-        date_pattern = r"\(?Date:\s*(\d{1,2})/(\d{1,2})(?:/(\d{4}))?\)?"
-        old_match = re.search(date_pattern, old_event_str)
-        new_match = re.search(date_pattern, new_event_str)
-
         stats = await self.get_user_stats(uid)
         events = stats["events"]
 
-        if old_event_str not in events:
-            if old_match and new_match:
+        if old_event_str in events:
+            index = events.index(old_event_str)
+        else:
+            date_pattern = r"\(?Date:\s*(\d{1,2})/(\d{1,2})(?:/(\d{4}))?\)?"
+            old_match = re.search(date_pattern, old_event_str)
+
+            index = None
+            if old_match:
+                old_month, old_day, old_year = old_match.groups()
                 for i, e in enumerate(events):
                     e_match = re.search(date_pattern, e)
-                    if e_match and e_match.group(1) == old_match.group(1) and e_match.group(2) == old_match.group(2):
-                        index = i
-                        break
-                else:
-                    await ctx.send(f"Could not find the event {old_event_str} in {player.display_name}'s events.")
-                    return
-            else:
+                    if e_match:
+                        emonth, eday, eyear = e_match.groups()
+                        if (emonth == old_month and eday == old_day and 
+                            (old_year is None or old_year == eyear)):
+                            index = i
+                            break
+
+            if index is None:
                 await ctx.send(f"Could not find the event {old_event_str} in {player.display_name}'s events.")
                 return
-        else:
-            index = events.index(old_event_str)
 
         events[index] = new_event_str
         await self.save_user_stats(uid, stats["wins"], stats["br_placements"], events, stats["marathon_wins"])
         await ctx.send(f"Updated event for {player.display_name}:\n{old_event_str} → {new_event_str}")
-
 
     @commands.command()
     async def marathonset(self, ctx, player: discord.Member, count: int):
