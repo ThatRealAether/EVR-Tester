@@ -236,35 +236,25 @@ class EventCog(commands.Cog):
         await ctx.send(f"Set Marathon Wins for {player.display_name} to {marathon_wins}.")
 
     @commands.command()
-    async def featadd(self, ctx, player: discord.Member, *, event_str: str):
-        """
-        Adds a featured win for a user. Maximum of 3 featured wins.
-        """
+    async def featadd(self, ctx, player: discord.Member, *, event_name: str):
         uid = str(player.id)
 
-        async with self.pool.acquire() as conn:
-            await conn.execute("""
-                INSERT INTO featured_wins (userid, wins)
-                VALUES ($1, '{}')
-                ON CONFLICT (userid) DO NOTHING
-            """, int(uid))
+        featured = await self.get_featured_wins(uid)
+        if not isinstance(featured, list):
+            featured = []
 
-            row = await conn.fetchrow("SELECT wins FROM featured_wins WHERE userid=$1", int(uid))
-            featured = row['wins'] if row else []
+        if len(featured) >= 3:
+            await ctx.send(f"{player.display_name} already has 3 featured wins.")
+            return
 
-            if event_str in featured:
-                await ctx.send(f"{player.display_name} already has that featured win.")
-                return
+        stats = await self.get_user_stats(uid)
+        if event_name not in stats['events']:
+            await ctx.send(f"{player.display_name} does not have an event named '{event_name}'.")
+            return
 
-            if len(featured) >= 3:
-                featured.pop(0)
-
-            featured.append(event_str)
-
-            await conn.execute("UPDATE featured_wins SET wins=$1 WHERE userid=$2", featured, int(uid))
-    
-        await ctx.send(f"Added featured win for {player.display_name}: {event_str}")
-
+        featured.append(event_name)
+        await self.set_featured_wins(uid, featured)
+        await ctx.send(f"Added featured win for {player.display_name}: {event_name}")
 
     @commands.command()
     async def allevents(self, ctx, player: discord.Member):
