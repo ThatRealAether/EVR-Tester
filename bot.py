@@ -50,11 +50,12 @@ GAME_DATA = {
 }
 
 def parse_event_date(event_str):
-    match = re.search(r"\(Date:\s*(\d{1,2})/(\d{1,2})\)", event_str)
+    match = re.search(r"\(Date:\s*(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\)", event_str)
     if match:
         month = int(match.group(1))
         day = int(match.group(2))
-        return datetime(2000, month, day)
+        year = int(match.group(3)) if match.group(3) else datetime.now().year
+        return datetime(year, month, day)
     else:
         return datetime.min
 
@@ -186,6 +187,42 @@ class EventCog(commands.Cog):
         marathon_wins = count
         await self.save_user_stats(uid, stats['wins'], stats['br_placements'], stats['events'], marathon_wins)
         await ctx.send(f"Set Marathon Wins for {player.display_name} to {marathon_wins}.")
+
+    @commands.command()
+    async def allstats(self, ctx, player: discord.Member):
+        uid = str(player.id)
+        data = await self.get_user_stats(uid)
+
+        if not data or (data["wins"] == 0 and not data["br_placements"] and not data["events"] and data["marathon_wins"] == 0):
+            await ctx.send(f"No stats found for {player.display_name}.")
+            return
+
+        team_cog = self.bot.get_cog("TeamCog")
+        team_display = ""
+        if team_cog:
+            team_id = await team_cog.get_user_team(uid)
+            if team_id is not None:
+                team_name = await team_cog.get_team_name_by_id(team_id)
+                if team_name:
+                    emoji = team_cog.TEAM_EMOJIS.get(team_name.lower())
+                    if emoji:
+                        team_display = f"{emoji} {team_name} "
+
+        events_list = data["events"][::-1] if data["events"] else []
+        display_events = "\n".join(f"• {e}" for e in events_list)
+
+        embed = discord.Embed(
+            title=f"All Registered Events for {team_display}{player.display_name}",
+            description=display_events if display_events else "None",
+            color=discord.Color.dark_teal()
+        )
+        embed.add_field(name="Total Wins", value=str(data["wins"]), inline=False)
+        if data["marathon_wins"] > 0:
+            embed.add_field(name="Marathon Wins", value=str(data["marathon_wins"]), inline=False)
+        br_placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
+        embed.add_field(name="Battle Royal Placements", value=br_placements, inline=False)
+
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def stats(self, ctx, player: discord.Member = None):
