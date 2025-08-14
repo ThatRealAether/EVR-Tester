@@ -329,8 +329,9 @@ class EventCog(commands.Cog):
                                     if emoji:
                                         team_display = f"{emoji} {team_name} | "
                         wins = data.get("wins", 0)
+                        featured = ", ".join(data.get("featured_wins", [])) if data.get("featured_wins") else "None"
                         br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
-                        embed.description += f"**{idx}. {team_display}{mention}** — Wins: {wins}, BR Placements: {br_placements}\n\n"
+                        embed.description += f"**{idx}. {team_display}{mention}** — Wins: {wins}, Featured Wins: {featured}, BR Placements: {br_placements}\n\n"
                     return embed
 
                 @ui.button(label="Previous", style=discord.ButtonStyle.blurple)
@@ -389,11 +390,11 @@ class EventCog(commands.Cog):
                 color=discord.Color.dark_teal()
             )
             embed.add_field(name="Wins", value=str(data['wins']), inline=False)
+            embed.add_field(name="Featured Wins", value=featured, inline=False)
             embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
             embed.add_field(name="Events", value=display_events if display_events else "None", inline=False)
             if marathon_wins > 0:
                 embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
-            embed.add_field(name="Featured Wins", value=featured, inline=False)
 
             await ctx.send(embed=embed)
 
