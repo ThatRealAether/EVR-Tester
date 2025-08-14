@@ -190,7 +190,7 @@ class EventCog(commands.Cog):
         await ctx.send(f"Set Marathon Wins for {player.display_name} to {marathon_wins}.")
 
     @commands.command()
-    async def allstats(self, ctx, player: discord.Member):
+    async def allevents(self, ctx, player: discord.Member):
         uid = str(player.id)
         data = await self.get_user_stats(uid)
 
