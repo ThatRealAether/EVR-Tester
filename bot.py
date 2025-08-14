@@ -116,7 +116,7 @@ class EventCog(commands.Cog):
             "- **!stats [@user]** - Displays the stats of a specific user\n"
             "- **!index** — Show list of game modes (reply with name to see description)\n"
             "- **!search <game name>** — Show winners of a specific game mode\n"
-            "- **!tlist** - Show this list of team commands.\n"
+            "- **!tlist** - Show the list of team commands.\n"
         )
         await ctx.send(help_text)
     
@@ -315,7 +315,7 @@ class EventCog(commands.Cog):
     @commands.command()
     async def bulkreg(self, ctx, *players: discord.Member, event_name: str, date: str = None):
         if len(players) == 0:
-            await ctx.send("You must mention at least 2 users!")
+            await ctx.send("Registered **{event_name}** for Casper the Ghost on {date}. SPECIFY USERS DUMBASS :sob:")
             return
         if len(players) == 1:
             await ctx.send("Please use !eventreg for single wins.")
@@ -331,7 +331,7 @@ class EventCog(commands.Cog):
             uid = str(player.id)
             stats = await self.get_user_stats(uid)
             wins = stats["wins"]
-            br_placements = stats["br_placements"]  # kept for save
+            br_placements = stats["br_placements"]
             events = stats["events"]
             marathon_wins = stats["marathon_wins"]
 
@@ -342,7 +342,7 @@ class EventCog(commands.Cog):
             registered_mentions.append(player.mention)
 
         mentions_text = "\n• ".join(registered_mentions)
-        await ctx.send(f"Recorded non-battle royal event **{event_name}** for the following users on {date}:\n• {mentions_text}")
+        await ctx.send(f"Recorded **{event_name}** for the following users on {date}:\n• {mentions_text}")
 
     @commands.command()
     async def clearrec(self, ctx, player: discord.Member):
