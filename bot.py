@@ -357,7 +357,7 @@ class EventCog(commands.Cog):
             placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
             events_list = data["events"] if data["events"] else []
             marathon_wins = data["marathon_wins"]
-            featured_wins = data.get("featured_wins", [])
+            featured = ", ".join(data.get("featured_wins", [])) if data.get("featured_wins") else "None"
 
             max_events_display = 10
             events_to_show = events_list[-max_events_display:][::-1]
@@ -371,18 +371,11 @@ class EventCog(commands.Cog):
                 color=discord.Color.dark_teal()
             )
             embed.add_field(name="Wins", value=str(data['wins']), inline=False)
-
-            if featured_wins:
-                embed.add_field(
-                    name="Featured Wins",
-                    value="\n".join(f"• {f}" for f in featured_wins),
-                    inline=False
-                )
-
             embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
             embed.add_field(name="Events", value=display_events if display_events else "None", inline=False)
             if marathon_wins > 0:
                 embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
+            embed.add_field(name="Featured Wins", value=featured, inline=False)
 
             await ctx.send(embed=embed)
 
