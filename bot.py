@@ -94,49 +94,26 @@ class EventCog(commands.Cog):
             return data
 
     async def get_user_stats(self, user_id):
-        async with self.pool.acquire() as conn:
-            row = await conn.fetchrow(
-                "SELECT wins, br_placements, events, marathon_wins FROM stats WHERE user_id=$1",
-                user_id
-            )
-            f_rows = await conn.fetch(
-                "SELECT event FROM featured_wins WHERE userid=$1",
-                user_id
-            )
-            featured_wins = [r['event'] for r in f_rows] if f_rows else []
+    async with self.pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT wins, br_placements, events, marathon_wins FROM stats WHERE user_id=$1",
+            user_id
+        )
+        if row:
+            br_placements = row['br_placements'] or []
+            events = row['events'] or []
 
-            if row:
-                br_placements = row['br_placements'] or []
-                events = row['events'] or []
+            br_wins = sum(1 for placement in br_placements if placement == "1st")
+            total_wins = len(events) + br_wins
 
-                br_wins = sum(1 for placement in br_placements if placement == "1st")
-                total_wins = len(events) + br_wins
-
-                return {
-                    "wins": total_wins,
-                    "br_placements": br_placements,
-                    "events": events,
-                    "marathon_wins": row['marathon_wins'] or 0,
-                    "featured_wins": featured_wins
-                }
-            else:
-                return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0, "featured_wins": []}
-
-    async def get_featured_wins(self, uid):
-        async with self.pool.acquire() as conn:
-            row = await conn.fetchrow("SELECT wins FROM featured_wins WHERE userid=$1", int(uid))
-            if row and row['wins']:
-                return json.loads(row['wins'])
-            return []
-
-    async def set_featured_wins(self, uid, wins_list):
-        async with self.pool.acquire() as conn:
-            await conn.execute(
-                "INSERT INTO featured_wins (userid, wins) VALUES ($1, $2) "
-                "ON CONFLICT (userid) DO UPDATE SET wins=$2",
-                int(uid),
-                json.dumps(wins_list)
-            )
+            return {
+                "wins": total_wins,
+                "br_placements": br_placements,
+                "events": events,
+                "marathon_wins": row['marathon_wins'] or 0,
+            }
+        else:
+            return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
 
     @commands.command()
     async def list(self, ctx):
@@ -159,7 +136,7 @@ class EventCog(commands.Cog):
             "- **!bulkreg** - Same format as !eventreg minus br logic\n"
             " `• Example: !eventreg @User Cooking false 7/25`\n"
             " `• Example: !eventreg @User PVP true 1st 7/25`\n"
-            "- **!editreg** - Edit an entry of an event\n"
+            "- **!editreg** - Edit an entry of an event\n\n"
             " `• Example: !editentry @User Cooking 5/6 => Cooking 5/6/2024`\n"
             "- **!clearall [@user]** — Clear all stats for a user\n"
             "- **!clearrec [@user]** — Clear most recent stat for a user"
@@ -243,27 +220,6 @@ class EventCog(commands.Cog):
         await ctx.send(f"Set Marathon Wins for {player.display_name} to {marathon_wins}.")
 
     @commands.command()
-    async def featadd(self, ctx, player: discord.Member, *, event_name: str):
-        uid = str(player.id)
-
-        featured = await self.get_featured_wins(uid)
-        if not isinstance(featured, list):
-            featured = []
-
-        if len(featured) >= 3:
-            await ctx.send(f"{player.display_name} already has 3 featured wins.")
-            return
-
-        stats = await self.get_user_stats(uid)
-        if event_name not in stats['events']:
-            await ctx.send(f"{player.display_name} does not have an event named '{event_name}'.")
-            return
-
-        featured.append(event_name)
-        await self.set_featured_wins(uid, featured)
-        await ctx.send(f"Added featured win for {player.display_name}: {event_name}")
-
-    @commands.command()
     async def allevents(self, ctx, player: discord.Member):
         uid = str(player.id)
         data = await self.get_user_stats(uid)
@@ -336,9 +292,8 @@ class EventCog(commands.Cog):
                                     if emoji:
                                         team_display = f"{emoji} {team_name} | "
                         wins = data.get("wins", 0)
-                        featured = ", ".join(data.get("featured_wins", [])) if data.get("featured_wins") else "None"
                         br_placements = ", ".join(data.get("br_placements", [])) if data.get("br_placements") else "None"
-                        embed.description += f"**{idx}. {team_display}{mention}** — Wins: {wins}, Featured Wins: {featured}, BR Placements: {br_placements}\n\n"
+                        embed.description += f"**{idx}. {team_display}{mention}** — Wins: {wins}, BR Placements: {br_placements}\n\n"
                     return embed
 
                 @ui.button(label="Previous", style=discord.ButtonStyle.blurple)
@@ -383,7 +338,6 @@ class EventCog(commands.Cog):
             placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
             events_list = data["events"] if data["events"] else []
             marathon_wins = data["marathon_wins"]
-            featured = ", ".join(data.get("featured_wins", [])) if data.get("featured_wins") else "None"
 
             max_events_display = 10
             events_to_show = events_list[-max_events_display:][::-1]
@@ -397,7 +351,6 @@ class EventCog(commands.Cog):
                 color=discord.Color.dark_teal()
             )
             embed.add_field(name="Wins", value=str(data['wins']), inline=False)
-            embed.add_field(name="Featured Wins", value=featured, inline=False)
             embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
             embed.add_field(name="Events", value=display_events if display_events else "None", inline=False)
             if marathon_wins > 0:
