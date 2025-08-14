@@ -10,6 +10,7 @@ import asyncpg
 import re
 from team_cog import TeamCog
 from datetime import datetime
+from discord import app_commands
 
 app = Flask('')
 
