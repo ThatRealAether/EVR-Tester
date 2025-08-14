@@ -64,7 +64,7 @@ class EventCog(commands.Cog):
         self.bot = bot
         self.pool = pool
 
-    async def save_user_stats(self, uid, wins, br_placements, events, marathon_wins, featured_wins=None):
+    async def save_user_stats(self, uid, wins, br_placements, events, marathon_wins):
     async with self.pool.acquire() as conn:
         await conn.execute("""
             INSERT INTO stats (user_id, wins, br_placements, events, marathon_wins)
