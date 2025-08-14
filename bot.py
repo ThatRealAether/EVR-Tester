@@ -565,11 +565,15 @@ class DiscordBot(commands.Bot):
         self.logger = logging.getLogger(__name__)
         self.pool = pool
 
-    async def setup_hook(self):
-        await self.add_cog(EventCog(self, self.pool))
-        await self.add_cog(TeamCog(self, self.pool))
-        await setup_slash(self)
-        self.logger.info("Cog loaded.")
+async def setup_hook(self):
+    await self.add_cog(EventCog(self, self.pool))
+    await self.add_cog(TeamCog(self, self.pool))
+    await self.add_cog(SlashCommands(self))
+
+    guild = discord.Object(id=1358670444584108094)
+    await self.tree.sync(guild=guild)
+
+    self.logger.info("Cogs loaded and slash commands synced.")
 
     async def on_ready(self):
         self.logger.info(f"Logged in as {self.user} (ID: {self.user.id})")
