@@ -118,7 +118,7 @@ class EventCog(commands.Cog):
                     events = EXCLUDED.events,
                     marathon_wins = EXCLUDED.marathon_wins,
                     featured_wins = EXCLUDED.featured_wins
-            """, uid, br_placements, events, wins, marathon_wins, featured_wins)
+            """, uid, wins, br_placements, events, marathon_wins, featured_wins)
 
 
     @commands.command()
