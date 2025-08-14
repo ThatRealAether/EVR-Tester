@@ -210,33 +210,32 @@ class EventCog(commands.Cog):
         await ctx.send(f"Set Marathon Wins for {player.display_name} to {marathon_wins}.")
 
     @commands.command()
-    async def featadd(self, ctx, player: discord.Member, *, event_name: str):
-        """Adds a notable win for a player (max 3)."""
+    async def featadd(self, ctx, player: discord.Member, *, feat_win: str):
+        """Add a featured win for a user (up to 3)."""
         uid = str(player.id)
-        stats = await self.get_user_stats(uid)
+        data = await self.get_user_stats(uid)
 
-        featured_wins = stats.get("featured_wins", [])
-
-        if event_name in featured_wins:
-            await ctx.send(f"{player.display_name} already has this event marked as a featured win.")
-            return
+        featured_wins = data.get("featured_wins", [])
+        if not isinstance(featured_wins, list):
+            featured_wins = []
 
         if len(featured_wins) >= 3:
-            await ctx.send(f"{player.display_name} already has 3 featured wins. Remove one first.")
+            await ctx.send(f"{player.display_name} already has 3 featured wins. Remove one before adding another.")
             return
 
-        featured_wins.append(event_name)
-        stats["featured_wins"] = featured_wins
+        featured_wins.append(feat_win)
 
         await self.save_user_stats(
             uid,
-            stats["wins"],
-            stats["br_placements"],
-            stats["events"],
-            stats["marathon_wins"]
+            data["wins"],
+            data["br_placements"],
+            data["events"],
+            data["marathon_wins"],
+            featured_wins=featured_wins
         )
 
-        await ctx.send(f"Added featured win for {player.display_name}: {event_name}")
+        await ctx.send(f"Added featured win for {player.display_name}: `{feat_win}`.\nThey now have {len(featured_wins)}/3 featured wins.")
+
 
     @commands.command()
     async def allevents(self, ctx, player: discord.Member):
