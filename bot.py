@@ -105,10 +105,6 @@ class EventCog(commands.Cog):
             """, user_id, wins, br_placements_list, events_list, marathon_wins)
 
     @commands.command()
-    async def ping(self, ctx):
-        await ctx.send("Pong!")
-
-    @commands.command()
     async def list(self, ctx):
         help_text = (
             "# __Bot Commands__\n"
@@ -194,11 +190,13 @@ class EventCog(commands.Cog):
     @commands.command()
     async def stats(self, ctx, player: discord.Member = None):
         team_cog = self.bot.get_cog("TeamCog")
+
         if player is None:
             stats = await self.get_stats()
             if not stats:
                 await ctx.send("No stats found yet.")
                 return
+
             sorted_users = sorted(
                 stats.items(),
                 key=lambda item: (-item[1].get("wins", 0), -len(item[1].get("br_placements", [])))
@@ -273,6 +271,7 @@ class EventCog(commands.Cog):
             if not data or (data["wins"] == 0 and not data["br_placements"] and not data["events"] and data["marathon_wins"] == 0):
                 await ctx.send(f"No stats found for {player.display_name}.")
                 return
+
             team_display = ""
             if team_cog:
                 team_id = await team_cog.get_user_team(uid)
@@ -282,17 +281,19 @@ class EventCog(commands.Cog):
                         emoji = team_cog.TEAM_EMOJIS.get(team_name.lower())
                         if emoji:
                             team_display = f"{emoji} {team_name} "
+
             placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
             events_list = data["events"] if data["events"] else []
             marathon_wins = data["marathon_wins"]
-            display_events = ""
+
             max_events_display = 10
-            events_to_show = events_list[-max_events_display:][::-1]  # last N events, newest first
-            for e in events_to_show:
-                display_events += f"• {e}\n"
+
+            events_to_show = events_list[-max_events_display:][::-1]
+            display_events = "\n".join(f"• {e}" for e in events_to_show)
+
             remaining = len(events_list) - max_events_display
             if remaining > 0:
-                display_events += f"+{remaining} more..."
+                display_events += f"\n+{remaining} more..."
 
             embed = discord.Embed(
                 title=f"Stats for {team_display}{player.display_name}",
@@ -303,6 +304,7 @@ class EventCog(commands.Cog):
             embed.add_field(name="Events", value=display_events if display_events else "None", inline=False)
             if marathon_wins > 0:
                 embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
+
             await ctx.send(embed=embed)
 
     @commands.command()
