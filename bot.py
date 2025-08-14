@@ -6,6 +6,7 @@ from discord.ext import commands
 import os
 import logging
 import asyncio
+import json
 import asyncpg
 import re
 from team_cog import TeamCog
@@ -92,30 +93,21 @@ class EventCog(commands.Cog):
                 }
             return data
 
-    async def get_user_stats(self, user_id):
+    async def get_featured_wins(self, uid):
         async with self.pool.acquire() as conn:
-            row = await conn.fetchrow(
-                "SELECT wins, br_placements, events, marathon_wins FROM stats WHERE user_id=$1",
-                user_id
-            )
-            if row:
-                return {
-                    "wins": row['wins'],
-                    "br_placements": row['br_placements'] or [],
-                    "events": row['events'] or [],
-                    "marathon_wins": row['marathon_wins'] or 0,
-                }
-            else:
-                return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
+            row = await conn.fetchrow("SELECT wins FROM featured_wins WHERE userid=$1", int(uid))
+            if row and row['wins']:
+                return json.loads(row['wins'])
+            return []
 
-    async def save_featured_wins(self, uid, wins_list):
+    async def set_featured_wins(self, uid, wins_list):
         async with self.pool.acquire() as conn:
-            await conn.execute("""
-                INSERT INTO featured_wins (userid, wins)
-                VALUES ($1, $2)
-                ON CONFLICT (userid) DO UPDATE
-                SET wins = EXCLUDED.wins
-            """, uid, wins_list)
+            await conn.execute(
+                "INSERT INTO featured_wins (userid, wins) VALUES ($1, $2) "
+                "ON CONFLICT (userid) DO UPDATE SET wins=$2",
+                int(uid),
+                json.dumps(wins_list)
+            )
 
     async def get_featured_wins(self, uid):
         async with self.pool.acquire() as conn:
