@@ -307,6 +307,46 @@ class EventCog(commands.Cog):
         await ctx.send(f"All stats cleared for {player.display_name}.")
 
     @commands.command()
+    async def bulkreg(self, ctx, *, players: str):
+        mentions = [p.strip() for p in players.split(",")]
+
+        if len(mentions) == 1:
+            await ctx.send("Please use !eventreg for single wins.")
+            return
+
+        await ctx.send("Please type the event name for registration:")
+
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        try:
+            msg = await self.bot.wait_for("message", timeout=30.0, check=check)
+            event_name = msg.content
+        except asyncio.TimeoutError:
+            await ctx.send("Command timed out! Try !bulkreg again.")
+            return
+
+        event_entry = f"{event_name} | {datetime.now().strftime('%Y-%m-%d')}"
+
+        success_count = 0
+        for mention in mentions:
+            try:
+                member = await commands.MemberConverter().convert(ctx, mention)
+            except:
+                continue
+
+            uid = str(member.id)
+            stats = await self.get_user_stats(uid)
+            if not stats:
+                stats = {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
+
+            stats["events"].append(event_entry)
+            await self.save_user_stats(uid, stats["wins"], stats["br_placements"], stats["events"], stats["marathon_wins"])
+            success_count += 1
+
+        await ctx.send(f"Registered {success_count} users for event:\n**{event_entry}**")
+
+    @commands.command()
     async def clearrec(self, ctx, player: discord.Member):
         uid = str(player.id)
         stats = await self.get_user_stats(uid)
