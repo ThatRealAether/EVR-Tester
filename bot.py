@@ -210,6 +210,26 @@ class EventCog(commands.Cog):
         await ctx.send(f"Set Marathon Wins for {player.display_name} to {marathon_wins}.")
 
     @commands.command()
+    async def featadd(self, ctx, player: discord.Member, *, event_name: str):
+        uid = str(player.id)
+        stats = await self.get_user_stats(uid)
+
+        if "featured_wins" not in stats:
+            stats["featured_wins"] = []
+
+        if event_name in stats["featured_wins"]:
+            await ctx.send(f"{player.display_name} already has **{event_name}** as a featured win.")
+            return
+
+        if len(stats["featured_wins"]) >= 3:
+            await ctx.send(f"{player.display_name} already has 3 featured wins. Remove one before adding a new one.")
+            return
+
+        stats["featured_wins"].append(event_name)
+        await self.save_user_stats(uid, stats["wins"], stats["br_placements"], stats["events"], stats["marathon_wins"], featured_wins=stats["featured_wins"])
+        await ctx.send(f"Added **{event_name}** as a featured win for {player.display_name}.")
+
+    @commands.command()
     async def allevents(self, ctx, player: discord.Member):
         uid = str(player.id)
         data = await self.get_user_stats(uid)
@@ -328,12 +348,11 @@ class EventCog(commands.Cog):
             placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
             events_list = data["events"] if data["events"] else []
             marathon_wins = data["marathon_wins"]
+            featured_wins = data.get("featured_wins", [])
 
             max_events_display = 10
-
             events_to_show = events_list[-max_events_display:][::-1]
             display_events = "\n".join(f"• {e}" for e in events_to_show)
-
             remaining = len(events_list) - max_events_display
             if remaining > 0:
                 display_events += f"\n+{remaining} more..."
@@ -345,6 +364,11 @@ class EventCog(commands.Cog):
             embed.add_field(name="Wins", value=str(data['wins']), inline=False)
             embed.add_field(name="Battle Royal Placements", value=placements, inline=False)
             embed.add_field(name="Events", value=display_events if display_events else "None", inline=False)
+
+            if featured_wins:
+                feat_display = "\n".join(f"• {e}" for e in featured_wins)
+                embed.add_field(name="🌟 Featured Wins", value=feat_display, inline=False)
+
             if marathon_wins > 0:
                 embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
 
