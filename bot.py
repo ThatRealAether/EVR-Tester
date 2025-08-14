@@ -230,21 +230,36 @@ class EventCog(commands.Cog):
         await self.save_user_stats(uid, stats['wins'], stats['br_placements'], stats['events'], marathon_wins)
         await ctx.send(f"Set Marathon Wins for {player.display_name} to {marathon_wins}.")
 
-    @commands.command(name="featadd")
-    async def featadd(self, ctx, member: discord.Member, *, win_text: str):
-        """Add a featured win for a user."""
-        user_id = member.id
-        win_entry = win_text.strip()
+    @commands.command()
+    async def featadd(self, ctx, player: discord.Member, *, event_str: str):
+        """
+        Adds a featured win for a user. Maximum of 3 featured wins.
+        """
+        uid = str(player.id)
 
         async with self.pool.acquire() as conn:
             await conn.execute("""
                 INSERT INTO featured_wins (user_id, wins)
-                VALUES ($1, ARRAY[$2])
-                ON CONFLICT (user_id) DO UPDATE
-                SET wins = array_append(featured_wins.wins, $2)
-            """, user_id, win_entry)
+                VALUES ($1, '{}')
+                ON CONFLICT (user_id) DO NOTHING
+            """, int(uid))
 
-        await ctx.send(f"✅ Added featured win for {member.display_name}: `{win_entry}`")
+            row = await conn.fetchrow("SELECT wins FROM featured_wins WHERE user_id=$1", int(uid))
+            featured = row['wins'] if row else []
+
+            if event_str in featured:
+                await ctx.send(f"{player.display_name} already has that featured win.")
+                return
+
+            if len(featured) >= 3:
+                featured.pop(0)
+
+            featured.append(event_str)
+
+            await conn.execute("UPDATE featured_wins SET wins=$1 WHERE user_id=$2", featured, int(uid))
+    
+        await ctx.send(f"Added featured win for {player.display_name}: {event_str}")
+
 
     @commands.command()
     async def allevents(self, ctx, player: discord.Member):
