@@ -307,44 +307,36 @@ class EventCog(commands.Cog):
         await ctx.send(f"All stats cleared for {player.display_name}.")
 
     @commands.command()
-    async def bulkreg(self, ctx, *, players: str):
-        mentions = [p.strip() for p in players.split(",")]
-
-        if len(mentions) == 1:
+    async def bulkreg(self, ctx, *players: discord.Member, event_name: str, date: str = None):
+        if len(players) == 0:
+            await ctx.send("You must mention at least 2 users!")
+            return
+        if len(players) == 1:
             await ctx.send("Please use !eventreg for single wins.")
             return
-
-        await ctx.send("Please type the event name for registration:")
-
-        def check(m):
-            return m.author == ctx.author and m.channel == ctx.channel
-
-        try:
-            msg = await self.bot.wait_for("message", timeout=30.0, check=check)
-            event_name = msg.content
-        except asyncio.TimeoutError:
-            await ctx.send("Command timed out! Try !bulkreg again.")
+        if date is None:
+            await ctx.send("You must specify the date for the event. Example:\n!bulkreg @user1 @user2 ... EventName 7/25")
             return
 
-        event_entry = f"{event_name} | {datetime.now().strftime('%Y-%m-%d')}"
+        registered_mentions = []
+        event_entry = f"{event_name} (Date: {date})"
 
-        success_count = 0
-        for mention in mentions:
-            try:
-                member = await commands.MemberConverter().convert(ctx, mention)
-            except:
-                continue
-
-            uid = str(member.id)
+        for player in players:
+            uid = str(player.id)
             stats = await self.get_user_stats(uid)
-            if not stats:
-                stats = {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
+            wins = stats["wins"]
+            br_placements = stats["br_placements"]  # kept for save
+            events = stats["events"]
+            marathon_wins = stats["marathon_wins"]
 
-            stats["events"].append(event_entry)
-            await self.save_user_stats(uid, stats["wins"], stats["br_placements"], stats["events"], stats["marathon_wins"])
-            success_count += 1
+            events.append(event_entry)
+            wins += 1
 
-        await ctx.send(f"Registered {success_count} users for event:\n**{event_entry}**")
+            await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
+            registered_mentions.append(player.mention)
+
+        mentions_text = "\n• ".join(registered_mentions)
+        await ctx.send(f"Recorded non-battle royal event **{event_name}** for the following users on {date}:\n• {mentions_text}")
 
     @commands.command()
     async def clearrec(self, ctx, player: discord.Member):
