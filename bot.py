@@ -190,39 +190,24 @@ class EventCog(commands.Cog):
         await ctx.send(f"Set Marathon Wins for {player.display_name} to {marathon_wins}.")
 
     @commands.command()
-    async def allevents(self, ctx, player: discord.Member):
+    async def allstats(self, ctx, player: discord.Member):
         uid = str(player.id)
         data = await self.get_user_stats(uid)
 
-        if not data or (data["wins"] == 0 and not data["br_placements"] and not data["events"] and data["marathon_wins"] == 0):
-            await ctx.send(f"No stats found for {player.display_name}.")
+        if not data or not data["events"]:
+            await ctx.send(f"No events found for {player.display_name}.")
             return
 
-        team_cog = self.bot.get_cog("TeamCog")
-        team_display = ""
-        if team_cog:
-            team_id = await team_cog.get_user_team(uid)
-            if team_id is not None:
-                team_name = await team_cog.get_team_name_by_id(team_id)
-                if team_name:
-                    emoji = team_cog.TEAM_EMOJIS.get(team_name.lower())
-                    if emoji:
-                        team_display = f"{emoji} {team_name} "
-
-        events_list = data["events"][::-1] if data["events"] else []
-        display_events = "\n".join(f"• {e}" for e in events_list)
+        events_list = data["events"]
+        display_events = ""
+        for e in events_list:
+            display_events += f"• {e}\n"
 
         embed = discord.Embed(
-            title=f"All Registered Events for {team_display}{player.display_name}",
-            description=display_events if display_events else "None",
+            title=f"All Events for {player.display_name}",
+            description=display_events,
             color=discord.Color.dark_teal()
         )
-        embed.add_field(name="Total Wins", value=str(data["wins"]), inline=False)
-        if data["marathon_wins"] > 0:
-            embed.add_field(name="Marathon Wins", value=str(data["marathon_wins"]), inline=False)
-        br_placements = ", ".join(data["br_placements"]) if data["br_placements"] else "None"
-        embed.add_field(name="Battle Royal Placements", value=br_placements, inline=False)
-
         await ctx.send(embed=embed)
 
     @commands.command()
