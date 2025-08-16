@@ -56,6 +56,10 @@ class Secret(commands.Cog):
         await ctx.send(gif_url)
 
     @commands.command()
+    async def hi(self, ctx):
+        await ctx.send("i hope you fucking die")
+
+    @commands.command()
     async def rannum(self, ctx):
         num = random.randint(1, 10**30)
         await ctx.send(f"{num}")
