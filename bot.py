@@ -81,7 +81,7 @@ class EventCog(commands.Cog):
                     "- **!tlist** - Show the list of team commands"
                 )),
                 ("Team Commands", (
-                    "**Team Commands:**\n"
+                    "# __Team Commands__\n"
                     "- **!join <team_name>** - Join a preset team (Chaos, Revel, Hearth, Honor). Must have at least one event.\n"
                     "- **!leave** - Leave your current team.\n"
                     "- **!teamstats [team_name]** - Show stats of a team or your own team if no name provided.\n"
