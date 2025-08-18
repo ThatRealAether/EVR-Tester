@@ -114,6 +114,13 @@ class EventCog(commands.Cog):
                 }
             else:
                 return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
+
+
+    @commands.command()
+    async def list(self, ctx):
+        view = ListView(ctx)
+        embed = await view.get_embed()
+        await ctx.send(embed=embed, view=view)
     
     @commands.command()
     async def devlist(self, ctx):
@@ -584,12 +591,6 @@ class EventCog(commands.Cog):
             self.page = (self.page + 1) % len(self.pages)
             embed = await self.get_embed()
             await interaction.response.edit_message(embed=embed, view=self)
-
-    @commands.command()
-    async def list(self, ctx):
-        view = ListView(ctx)
-        embed = await view.get_embed()
-        await ctx.send(embed=embed, view=view)
 
 class DiscordBot(commands.Bot):
     def __init__(self, pool):
