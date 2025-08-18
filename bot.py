@@ -177,7 +177,7 @@ class EventCog(commands.Cog):
 
     @commands.command()
     async def list(self, ctx):
-        view = ListView(ctx)
+        view = self.ListView(ctx)
         embed = await view.get_embed()
         await ctx.send(embed=embed, view=view)
     
