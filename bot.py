@@ -114,19 +114,6 @@ class EventCog(commands.Cog):
                 }
             else:
                 return {"wins": 0, "br_placements": [], "events": [], "marathon_wins": 0}
-
-    @commands.command()
-    async def list(self, ctx):
-        help_text = (
-            "# __Bot Commands__\n"
-            "- **!stats** - Displays the stats of all users\n"
-            "- **!stats [@user]** - Displays the stats of a specific user\n"
-            "- **!index** — Show list of game modes (reply with name to see description)\n"
-            "- **!search <game name>** — Show winners of a specific game mode\n"
-            "- **!allevents [@user]** - Lists every event registered under a user\n"
-            "- **!tlist** - Show the list of team commands"
-        )
-        await ctx.send(help_text)
     
     @commands.command()
     async def devlist(self, ctx):
@@ -539,6 +526,70 @@ class EventCog(commands.Cog):
         embed = await view.update_embed()
         await ctx.send(embed=embed, view=view)
 
+    class ListView(ui.View):
+        def __init__(self, ctx):
+            super().__init__(timeout=180)
+            self.ctx = ctx
+            self.page = 0
+            self.pages = [
+                ("Bot Commands", (
+                    "# __Bot Commands__\n"
+                    "- **!stats** - Displays the stats of all users\n"
+                    "- **!stats [@user]** - Displays the stats of a specific user\n"
+                    "- **!index** — Show list of game modes (reply with name to see description)\n"
+                    "- **!search <game name>** — Show winners of a specific game mode\n"
+                    "- **!allevents [@user]** - Lists every event registered under a user\n"
+                    "- **!tlist** - Show the list of team commands"
+                )),
+                ("Team Commands", (
+                    "**Team Commands:**\n"
+                    "- **!join <team_name>** - Join a preset team (Chaos, Revel, Hearth, Honor). Must have at least one event.\n"
+                    "- **!leave** - Leave your current team.\n"
+                    "- **!teamstats [team_name]** - Show stats of a team or your own team if no name provided.\n"
+                    "- **!leaderboard** - Show leaderboard of all teams by points.\n"
+                )),
+                ("Secret Commands", (
+                    "# __Secret Commands__\n"
+                    "- **!eventreg** - Log an event\n"
+                    "- **!bulkreg** - Same format as !eventreg minus br logic\n"
+                    " `• Example: !eventreg @User Cooking false 7/25`\n"
+                    " `• Example: !eventreg @User PVP true 1st 7/25`\n"
+                    "- **!editreg** - Edit an entry of an event\n"
+                    "- **!clearall [@user]** — Clear all stats for a user\n"
+                    "- **!clearrec [@user]** — Clear most recent stat for a user"
+                ))
+            ]
+            self.update_buttons()
+
+        def update_buttons(self):
+            pass
+
+        async def get_embed(self):
+            title, text = self.pages[self.page]
+            embed = discord.Embed(
+                title=f"{title} (Page {self.page + 1}/{len(self.pages)})",
+                description=text,
+                color=discord.Color.dark_teal()
+            )
+            return embed
+
+        @ui.button(label="Previous", style=discord.ButtonStyle.blurple)
+        async def prev_button(self, interaction: discord.Interaction, button: ui.Button):
+            self.page = (self.page - 1) % len(self.pages)
+            embed = await self.get_embed()
+            await interaction.response.edit_message(embed=embed, view=self)
+
+        @ui.button(label="Next", style=discord.ButtonStyle.blurple)
+        async def next_button(self, interaction: discord.Interaction, button: ui.Button):
+            self.page = (self.page + 1) % len(self.pages)
+            embed = await self.get_embed()
+            await interaction.response.edit_message(embed=embed, view=self)
+
+    @commands.command()
+    async def list(self, ctx):
+        view = ListView(ctx)
+        embed = await view.get_embed()
+        await ctx.send(embed=embed, view=view)
 
 class DiscordBot(commands.Bot):
     def __init__(self, pool):
