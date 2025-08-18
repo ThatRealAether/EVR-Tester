@@ -89,13 +89,12 @@ class EventCog(commands.Cog):
                 )),
                 ("Secret Commands", (
                     "# __Secret Commands__\n"
-                    "- **!eventreg** - Log an event\n"
-                    "- **!bulkreg** - Same format as !eventreg minus br logic\n"
-                    " `• Example: !eventreg @User Cooking false 7/25`\n"
-                    " `• Example: !eventreg @User PVP true 1st 7/25`\n"
-                    "- **!editreg** - Edit an entry of an event\n"
-                    "- **!clearall [@user]** — Clear all stats for a user\n"
-                    "- **!clearrec [@user]** — Clear most recent stat for a user"
+                    "**!vivziepop**\n"
+                    "**!ibrokearule**\n"
+                    "**!killaether**\n"
+                    "**!omegaflowey**\n"
+                    "**!imstrong**\n"
+                    "**!rannum**"
                 ))
             ]
             self.update_buttons()
@@ -189,7 +188,7 @@ class EventCog(commands.Cog):
             "- **!bulkreg** - Same format as !eventreg minus br logic\n"
             " `• Example: !eventreg @User Cooking false 7/25`\n"
             " `• Example: !eventreg @User PVP true 1st 7/25`\n"
-            "- **!editreg** - Edit an entry of an event\n\n"
+            "- **!editreg** - Edit an entry of an event\n"
             " `• Example: !editentry @User Cooking 5/6 => Cooking 5/6/2024`\n"
             "- **!clearall [@user]** — Clear all stats for a user\n"
             "- **!clearrec [@user]** — Clear most recent stat for a user"
