@@ -26,29 +26,67 @@ def keep_alive():
     t.start()
 
 GAME_DATA = {
-    "pizzeria survival": "## __Pizzeria Survival__\n"
-                         "Pizzeria survival revolves around you surviving against a plethora of different monsters roaming around a pizzeria. Different monsters do different things so make sure to pay attention when they are explained.",
-    "locate the spy": "## __Locate the Spy__\n"
-                      "You and your peers are thrown into an abandoned facility with a catch, some of you are spies, or worse. Use the role you are assigned to either survive on your own, help everyone, or sabotage those around you. But make sure to leave in time before the core reactor explodes. If a spy is let on at the end, everyone loses and the spies win. Though, there may be others with different plans in mind.",
-    "doppelgangers": "## __Doppelgangers__\n"
-                     "Everyone is thrown into a facility where you need to get checked out by guards, your goal is to be let in the facility without getting gassed. 2-3 players will be assigned to be a guard and your goal is to let the citizens in, but keep the doppelgangers out.",
-    "hide and seek": "## __Hide and Seek__\n"
-                     "In hide and seek a monster roams around the area, your goal is to not get spotted to move on to the next round, or win. If you are spotted once you are most likely guaranteed to die.",
-    "guessing game": "## __Guessing Game__\n"
-                     "The host will think of a prompt, your goal is to guess what it is in 10-15 questions. The questions *have* to be yes or no questions, the host will not respond otherwise, and if you repeatedly mess up you die. Once the questions are used up, the host will call on someone random, they can discuss what they think with their peers but if you get it wrong, you die.",
-    "property listing": "## __Property Listing__\n"
-                        "The opposite of guessing game, you will be given a prompt and then you and your peers must come up with descriptors for said prompt. The more niche it is, the more points you get. But if you have to *really* stretch it to make it work, you get less points. capping out at 20. The person with the least points at the end of each round dies.",
-    "cooking": "## __Cooking__\n"
-               "Your goal is to survive as many rounds as possible; you will work with your fellow chefs to make it through said rounds. But it won't be so easy, there are monsters outside trying to stop your progress. They range from customers to the health inspector. Try to keep the floors clean and have good teamwork, you may be docked points for doing otherwise. You have 2 lives before its over.",
-    "city rushdown": "## __City Rushdown__\n"
-                     "The game takes place in a huge and booming city, except you are stuck on a platform. Your goal is to not die from electrocution, if the purple electricity happens to get passed to you, pass it to others by colliding with their bounding box.",
-    "ghost hunting": "## __Ghost Hunting__\n"
-                     "You are trapped in a facility with your peers, it doesn't matter if they die, all that matters is that *you* survive. Your goal is to capture as much paranormal activity as possible on your body \"camera\". This can range from a tray floating, random sounds, or the ghost itself, though it is recommended that you avoid seeing the ghost, those that do usually never live to tell the tale.",
-    "hook chasers": "## __Hook Chasers__\n"
-                    "Hook Chasers is all about aerial tag, everyone except one random person every round. The tagger's goal is to tag everyone, the runner's goal is to run away, the time for each round ranges from 8-15 minutes depending on player count. The tagger gets points for tagging people, runners get points for time alive, the person with the least amount of points every round dies.",
-    "karts": "## __Karts__\n"
-             "You and your peers are placed onto a racetrack, your goal is to not be in one of the last 2 positions when you finish, if you are, you get eliminated from the event. Each track has its own obstacles that you need to avoid ranging from icy floors, to giant pinballs in the sky."
+    "Horror": {
+        "pizzeria survival": "## __Pizzeria Survival__\n"
+                         "Pizzeria Survival revolves around you surviving against a plethora of different monsters roaming around a pizzeria. Different monsters do different things so make sure to pay attention when they are explained.",
+        "hide and seek": "## __Hide and Seek__\n"
+                         "In hide and seek a monster roams around the area, your goal is to not get spotted to move on to the next round, or win. If you are spotted once you are most likely guaranteed to die.",
+        "ghost hunting": "## __Ghost Hunting__\n"
+                         "You are trapped in a facility with your peers, it doesn't matter if they die, all that matters is that *you* survive. Your goal is to capture as much paranormal activity as possible on your body \"camera\". This can range from a tray floating, random sounds, or the ghost itself, though it is recommended that you avoid seeing the ghost, those that do usually never live to tell the tale.",
+    },
+    "Non-Horror": {
+        "locate the spy": "## __Locate the Spy__\n"
+                         "You and your peers are thrown into an abandoned facility with a catch, some of you are spies, or worse. Use the role you are assigned to either survive on your own, help everyone, or sabotage those around you. But make sure to leave in time before the core reactor explodes. If a spy is let on at the end, everyone loses and the spies win. Though, there may be others with different plans in mind.",
+        "doppelgangers": "## __Doppelgangers__\n"
+                         "Everyone is thrown into a facility where you need to get checked out by guards, your goal is to be let in the facility without getting gassed. 2-3 players will be assigned to be a guard and your goal is to let the citizens in, but keep the doppelgangers out.",
+        "guessing game": "## __Guessing Game__\n"
+                         "The host will think of a prompt, your goal is to guess what it is in 10-15 questions. The questions *have* to be yes or no questions, the host will not respond otherwise, and if you repeatedly mess up you die. Once the questions are used up, the host will call on someone random, they can discuss what they think with their peers but if you get it wrong, you die.",
+        "property listing": "## __Property Listing__\n"
+                         "The opposite of guessing game, you will be given a prompt and then you and your peers must come up with descriptors for said prompt. The more niche it is, the more points you get. But if you have to *really* stretch it to make it work, you get less points. capping out at 20. The person with the least points at the end of each round dies.",
+        "cooking": "## __Cooking__\n"
+                         "Your goal is to survive as many rounds as possible; you will work with your fellow chefs to make it through said rounds. But it won't be so easy, there are monsters outside trying to stop your progress. They range from customers to the health inspector. Try to keep the floors clean and have good teamwork, you may be docked points for doing otherwise. You have 2 lives before its over.",
+        "city rushdown": "## __City Rushdown__\n"
+                         "The game takes place in a huge and booming city, except you are stuck on a platform. Your goal is to not die from electrocution, if the purple electricity happens to get passed to you, pass it to others by colliding with their bounding box.",
+        "hook chasers": "## __Hook Chasers__\n"
+                         "Hook Chasers is all about aerial tag, everyone except one random person every round. The tagger's goal is to tag everyone, the runner's goal is to run away, the time for each round ranges from 8-15 minutes depending on player count. The tagger gets points for tagging people, runners get points for time alive, the person with the least amount of points every round dies.",
+        "karts": "## __Karts__\n"
+                         "You and your peers are placed onto a racetrack, your goal is to not be in one of the last 2 positions when you finish, if you are, you get eliminated from the event. Each track has its own obstacles that you need to avoid ranging from icy floors, to giant pinballs in the sky."
+    }
 }
+
+class GameModal(discord.ui.Modal, title="Look up a Game"):
+    game_name = discord.ui.TextInput(
+        label="Enter a game name",
+        placeholder="e.g. Hide and Seek",
+        style=discord.TextStyle.short
+    )
+
+async def on_submit(self, interaction: discord.Interaction):
+    name = self.game_name.value.lower()
+    found = None
+    for category, games in GAME_DATA.items():
+        if name in games:
+            found = (category, games[name])
+            break
+
+    if found:
+        category, desc = found
+        embed = discord.Embed(
+            title=f"EM Game Index: {name.title()}",
+            description=desc,
+            color=discord.Color.dark_teal()
+        )
+        embed.set_footer(text=f"Category: {category}")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    else:
+        await interaction.response.send_message(
+            f"❌ Could not find a game called **{self.game_name.value}**.",
+            ephemeral=True
+        )
+
+class IndexCog(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
 
 def parse_event_date(event_str):
     match = re.search(r"\(Date:\s*(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\)", event_str)
@@ -497,27 +535,34 @@ class EventCog(commands.Cog):
     async def index(self, ctx):
         embed = discord.Embed(
             title="EM Game Index",
-            description="\n\n".join(f"• {name.title()}" for name in GAME_DATA.keys()),
+            description="\n\n".join(
+                f"**{cat}**\n" + "\n".join(f"• {name.title()}" for name in games.keys())
+                for cat, games in GAME_DATA.items()
+            ),
             color=discord.Color.dark_teal()
         )
         await ctx.send(embed=embed)
 
-        def check(m):
-            return m.author == ctx.author and m.channel == ctx.channel and m.content.lower() in GAME_DATA
+        class IndexView(discord.ui.View):
+            def __init__(self, ctx, bot):
+                super().__init__(timeout=60)
+                self.ctx = ctx
+                self.bot = bot
 
-        try:
-            msg = await self.bot.wait_for('message', timeout=20.0, check=check)
-        except asyncio.TimeoutError:
-            await ctx.send("Command timed out! Type !index to try again.")
-            return
+            @discord.ui.button(label="Look Up Game", style=discord.ButtonStyle.primary)
+            async def lookup(self, interaction: discord.Interaction, button: discord.ui.Button):
+                if interaction.user != ctx.author:
+                    return await interaction.response.send_message("This isn’t your session!", ephemeral=True)
+                await interaction.response.send_modal(GameModal(ctx, bot))
 
-        description = GAME_DATA[msg.content.lower()]
-        embed_desc = discord.Embed(
-            title=f"EM Game Index: {msg.content.title()}",
-            description=description,
-            color=discord.Color.dark_teal()
-        )
-        await ctx.send(embed=embed_desc)
+            async def on_timeout(self):
+                try:
+                    await ctx.send("⌛ This index session has expired. Use `!index` again.")
+                except:
+                    pass
+
+        view = IndexView(ctx, self.bot)
+        await ctx.send("Click below to look up a game:", view=view)
 
 
     @commands.command()
