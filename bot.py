@@ -78,7 +78,7 @@ class EventCog(commands.Cog):
                     "- **!index** — Show list of game modes (reply with name to see description)\n"
                     "- **!search <game name>** — Show winners of a specific game mode\n"
                     "- **!allevents [@user]** - Lists every event registered under a user\n"
-                    "- **!tlist** - Show the list of team commands"
+                    "- **!ESinfo** - lists the credits and montage for Establishment Survival"
                 )),
                 ("Team Commands", (
                     "# __Team Commands__\n"
@@ -179,6 +179,17 @@ class EventCog(commands.Cog):
         view = self.ListView(ctx)
         embed = await view.get_embed()
         await ctx.send(embed=embed, view=view)
+
+    @commands.command()
+    async def ESinfo(self, ctx)
+        credit_text = (
+            "# __Credits & Montage__\n"
+            "[Full Establishment Survival Credits](https://docs.google.com/document/d/1KOF-V0HDE6PwnxB5CD_4hyK4OCy4nDYxvINBdF2GX1g/edit?usp=sharing)\n"
+            "-# This is a google document listing all of the credits for Establishment Survival ranging from worlds, to music, to helpers\n\n"
+            "[Establishment Survival Clip Montage](https://youtu.be/1DBn-YMvkvw)\n"
+            "-# This is a youtube video containing all of ES' best moments"
+        )
+        await ctx.send(credit_text)
     
     @commands.command()
     async def devlist(self, ctx):
@@ -189,7 +200,7 @@ class EventCog(commands.Cog):
             " `• Example: !eventreg @User Cooking false 7/25`\n"
             " `• Example: !eventreg @User PVP true 1st 7/25`\n"
             "- **!editreg** - Edit an entry of an event\n"
-            " `• Example: !editentry @User Cooking 5/6 => Cooking 5/6/2024`\n"
+            " `• Example: !editreg @User Cooking 5/6 => Cooking 5/6/2024`\n"
             "- **!clearall [@user]** — Clear all stats for a user\n"
             "- **!clearrec [@user]** — Clear most recent stat for a user"
         )
