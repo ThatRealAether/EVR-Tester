@@ -28,29 +28,43 @@ def keep_alive():
 GAME_DATA = {
     "Horror": {
         "pizzeria survival": "## __Pizzeria Survival__\n"
-                         "Pizzeria Survival revolves around you surviving against a plethora of different monsters roaming around a pizzeria. Different monsters do different things so make sure to pay attention when they are explained.",
+                "Pizzeria Survival revolves around you surviving against a plethora of different monsters roaming around a pizzeria. Different monsters do different things so make sure to pay attention when they are explained.",
         "hide and seek": "## __Hide and Seek__\n"
-                         "In hide and seek a monster roams around the area, your goal is to not get spotted to move on to the next round, or win. If you are spotted once you are most likely guaranteed to die.",
+                "In hide and seek a monster roams around the area, your goal is to not get spotted to move on to the next round, or win. If you are spotted once you are most likely guaranteed to die.",
         "ghost hunting": "## __Ghost Hunting__\n"
-                         "You are trapped in a facility with your peers, it doesn't matter if they die, all that matters is that *you* survive. Your goal is to capture as much paranormal activity as possible on your body \"camera\". This can range from a tray floating, random sounds, or the ghost itself, though it is recommended that you avoid seeing the ghost, those that do usually never live to tell the tale.",
+                "You are trapped in a facility with your peers, it doesn't matter if they die, all that matters is that *you* survive. Your goal is to capture as much paranormal activity as possible on your body \"camera\". This can range from a tray floating, random sounds, or the ghost itself, though it is recommended that you avoid seeing the ghost, those that do usually never live to tell the tale.",
+        "animation scurry": "## __Animation Scurry__\n"
+                "You are trapped with your peers in Animation Alley from Bendy and the Ink Machine, it does not matter if you help your friends or not, just stay alive no matter the cost, multiple threats are hunting you down as well."
+        "liminality": "## __Liminality__\n"
+                "You and everyone else present is thrown into a liminal space with a monster lurking around the premises, try to stay quiet and low to the ground, other instructions are given by the bot that roams those halls."
     },
-    "Non-Horror": {
-        "locate the spy": "## __Locate the Spy__\n"
-                         "You and your peers are thrown into an abandoned facility with a catch, some of you are spies, or worse. Use the role you are assigned to either survive on your own, help everyone, or sabotage those around you. But make sure to leave in time before the core reactor explodes. If a spy is let on at the end, everyone loses and the spies win. Though, there may be others with different plans in mind.",
+    "Every Man For Himself": {
         "doppelgangers": "## __Doppelgangers__\n"
-                         "Everyone is thrown into a facility where you need to get checked out by guards, your goal is to be let in the facility without getting gassed. 2-3 players will be assigned to be a guard and your goal is to let the citizens in, but keep the doppelgangers out.",
-        "guessing game": "## __Guessing Game__\n"
-                         "The host will think of a prompt, your goal is to guess what it is in 10-15 questions. The questions *have* to be yes or no questions, the host will not respond otherwise, and if you repeatedly mess up you die. Once the questions are used up, the host will call on someone random, they can discuss what they think with their peers but if you get it wrong, you die.",
+                "Everyone is thrown into a facility where you need to get checked out by guards, your goal is to be let in the facility without getting gassed. 2-3 players will be assigned to be a guard and your goal is to let the citizens in, but keep the doppelgangers out.",
+        "troll on the bridge": "## __Troll on the Bridge__\n"
+                "You and your peers are at the start of a bridge trying to cross it to get into a facility. But, something named *Helper Bot* is blocking your path, one by one you must go up andn convince him to pass, succeed, and you make it through, fail, and you are killed. **DO NOT USE WINS AS AN ARGUEMENT TO GET INSIDE, THINK OF IT AS GETTING INTO CHARACTER**."
         "property listing": "## __Property Listing__\n"
-                         "The opposite of guessing game, you will be given a prompt and then you and your peers must come up with descriptors for said prompt. The more niche it is, the more points you get. But if you have to *really* stretch it to make it work, you get less points. capping out at 20. The person with the least points at the end of each round dies.",
-        "cooking": "## __Cooking__\n"
-                         "Your goal is to survive as many rounds as possible; you will work with your fellow chefs to make it through said rounds. But it won't be so easy, there are monsters outside trying to stop your progress. They range from customers to the health inspector. Try to keep the floors clean and have good teamwork, you may be docked points for doing otherwise. You have 2 lives before its over.",
+                "The opposite of guessing game, you will be given a prompt and then you and your peers must come up with descriptors for said prompt. The more niche it is, the more points you get. But if you have to *really* stretch it to make it work, you get less points. capping out at 20. The person with the least points at the end of each round dies.",
         "city rushdown": "## __City Rushdown__\n"
-                         "The game takes place in a huge and booming city, except you are stuck on a platform. Your goal is to not die from electrocution, if the purple electricity happens to get passed to you, pass it to others by colliding with their bounding box.",
+                "The game takes place in a huge and booming city, except you are stuck on a platform. Your goal is to not die from electrocution, if the purple electricity happens to get passed to you, pass it to others by colliding with their bounding box.",
         "hook chasers": "## __Hook Chasers__\n"
-                         "Hook Chasers is all about aerial tag, everyone except one random person every round. The tagger's goal is to tag everyone, the runner's goal is to run away, the time for each round ranges from 8-15 minutes depending on player count. The tagger gets points for tagging people, runners get points for time alive, the person with the least amount of points every round dies.",
+                "Hook Chasers is all about aerial tag, everyone except one random person every round. The tagger's goal is to tag everyone, the runner's goal is to run away, the time for each round ranges from 8-15 minutes depending on player count. The tagger gets points for tagging people, runners get points for time alive, the person with the least amount of points every round dies.",
         "karts": "## __Karts__\n"
-                         "You and your peers are placed onto a racetrack, your goal is to not be in one of the last 2 positions when you finish, if you are, you get eliminated from the event. Each track has its own obstacles that you need to avoid ranging from icy floors, to giant pinballs in the sky."
+                "You and your peers are placed onto a racetrack, your goal is to not be in one of the last 2 positions when you finish, if you are, you get eliminated from the event. Each track has its own obstacles that you need to avoid ranging from icy floors, to giant pinballs in the sky."
+    },
+    "Team Based": {
+        "locate the spy": "## __Locate the Spy__\n"
+                "You and your peers are thrown into an abandoned facility with a catch, some of you are spies, or worse. Use the role you are assigned to either survive on your own, help everyone, or sabotage those around you. But make sure to leave in time before the core reactor explodes. If a spy is let on at the end, everyone loses and the spies win. Though, there may be others with different plans in mind.",
+        "cooking": "## __Cooking__\n"
+                "Your goal is to survive as many rounds as possible; you will work with your fellow chefs to make it through said rounds. But it won't be so easy, there are monsters outside trying to stop your progress. They range from customers to the health inspector. Try to keep the floors clean and have good teamwork, you may be docked points for doing otherwise. You have 2 lives before its over.",
+        "team attack": "## __Team Attack__\n"
+                "Team Attack is an altered version of locate the spy but instead of there being spies you have to locate, you are split into teams. There are many exclusive roles to this mode, your goal is to beat the other team by taking all of them out, coordinate with your team and team leader to best use your abilities and plan on how to take out the other team."
+        "competitive cooking": "## __Competitive Cooking__\n"
+                "Your goal is to work with the team you have been assigned to out-cook the other team! The opposing team gets eliminated, doesn't matter about the team size, ranging from 2 all the way to 8, just come out on top."
+        "acting": "## __Acting__\n"
+                "You will be grouped into teams with other people, the teams range from sizes of 2 - 4. Your goal is to follow the prompt but to ALSO be entertaining! If you fail either the host will decide, or the audience will vote for you to move onto the next round or not."
+        "guessing game": "## __Guessing Game__\n"
+                "The host will think of a prompt, your goal is to guess what it is in 10-15 questions. The questions *have* to be yes or no questions, the host will not respond otherwise, and if you repeatedly mess up you die. Once the questions are used up, the host will call on someone random, they can discuss what they think with their peers but if you get it wrong, you die.",
     }
 }
 
