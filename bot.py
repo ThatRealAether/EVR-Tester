@@ -529,23 +529,53 @@ class EventCog(commands.Cog):
 
     @commands.command()
     async def index(self, ctx):
-        embed = discord.Embed(
-            title="EM Game Index",
-            description="\n\n".join(
-                f"**{cat}**\n" + "\n".join(f"• {name.title()}" for name in games.keys())
-                for cat, games in GAME_DATA.items()
-            ),
-            color=discord.Color.dark_teal()
-        )
-        await ctx.send(embed=embed)
+        
+        categories = list(GAME_DATA.keys())
+        page = 0
+
+        def make_embed(page_index):
+            cat = categories[page_index]
+            games = GAME_DATA[cat]
+            embed = discord.Embed(
+                title=f"EM Game Index: {cat}",
+                description="\n".join(f"• {name.title()}" for name in games.keys()),
+                color=discord.Color.dark_teal()
+            )
+            embed.set_footer(text=f"Page {page_index + 1}/{len(categories)}")
+            return embed
+
+        message = await ctx.send(embed=make_embed(page))
 
         class IndexView(discord.ui.View):
-            def __init__(self, ctx):
+            def __init__(self, ctx, message):
                 super().__init__(timeout=60)
                 self.ctx = ctx
+                self.message = message
+                self.page = 0
 
-            @discord.ui.button(label="Look Up Game", style=discord.ButtonStyle.primary)
-            async def lookup(self, interaction: discord.Interaction, button: discord.ui.Button):
+            async def update_embed(self, interaction=None):
+                embed = make_embed(self.page)
+                if interaction:
+                    await interaction.response.edit_message(embed=embed, view=self)
+                else:
+                    await self.message.edit(embed=embed, view=self)
+
+            @discord.ui.button(label="Previous", style=discord.ButtonStyle.blurple)
+            async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+                if interaction.user != self.ctx.author:
+                    return await interaction.response.send_message("This isn’t your session!", ephemeral=True)
+                self.page = (self.page - 1) % len(categories)
+                await self.update_embed(interaction)
+
+            @discord.ui.button(label="Next", style=discord.ButtonStyle.blurple)
+            async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+                if interaction.user != self.ctx.author:
+                    return await interaction.response.send_message("This isn’t your session!", ephemeral=True)
+                self.page = (self.page + 1) % len(categories)
+                await self.update_embed(interaction)
+
+            @discord.ui.button(label="Look Up Game", style=discord.ButtonStyle.green)
+            async def lookup_button(self, interaction: discord.Interaction, button: discord.ui.Button):
                 if interaction.user != self.ctx.author:
                     return await interaction.response.send_message("This isn’t your session!", ephemeral=True)
                 await interaction.response.send_modal(GameModal())
@@ -554,13 +584,12 @@ class EventCog(commands.Cog):
                 for child in self.children:
                     child.disabled = True
                 try:
-                    await message.edit(content="⌛ This index session has expired. Use `!index` again.", view=self)
+                    await self.message.edit(content="⌛ This index session has expired. Use `!index` again.", view=self)
                 except:
                     pass
 
-        view = IndexView(ctx)
-        message = await ctx.send("Click below to look up a game:", view=view)
-
+        view = IndexView(ctx, message)
+        await view.update_embed(None)
 
     @commands.command()
     async def search(self, ctx, *, game_name: str):
