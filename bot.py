@@ -78,7 +78,7 @@ class EventCog(commands.Cog):
                     "- **!index** — Show list of game modes (reply with name to see description)\n"
                     "- **!search <game name>** — Show winners of a specific game mode\n"
                     "- **!allevents [@user]** - Lists every event registered under a user\n"
-                    "- **!ESinfo** - lists the credits and montage for Establishment Survival"
+                    "- **!esinfo** - lists the credits and montage for Establishment Survival"
                 )),
                 ("Team Commands", (
                     "# __Team Commands__\n"
@@ -181,7 +181,7 @@ class EventCog(commands.Cog):
         await ctx.send(embed=embed, view=view)
 
     @commands.command()
-    async def ESinfo(self, ctx):
+    async def esinfo(self, ctx):
         credit_text = (
             "# __Credits & Montage__\n"
             "[Full Establishment Survival Credits](https://docs.google.com/document/d/1KOF-V0HDE6PwnxB5CD_4hyK4OCy4nDYxvINBdF2GX1g/edit?usp=sharing)\n"
