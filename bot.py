@@ -61,28 +61,28 @@ class GameModal(discord.ui.Modal, title="Look up a Game"):
         style=discord.TextStyle.short
     )
 
-async def on_submit(self, interaction: discord.Interaction):
-    name = self.game_name.value.lower()
-    found = None
-    for category, games in GAME_DATA.items():
-        if name in games:
-            found = (category, games[name])
-            break
+    async def on_submit(self, interaction: discord.Interaction):
+        name = self.game_name.value.lower()
+        found = None
+        for category, games in GAME_DATA.items():
+            if name in games:
+                found = (category, games[name])
+                break
 
-    if found:
-        category, desc = found
-        embed = discord.Embed(
-            title=f"EM Game Index: {name.title()}",
-            description=desc,
-            color=discord.Color.dark_teal()
-        )
-        embed.set_footer(text=f"Category: {category}")
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-    else:
-        await interaction.response.send_message(
-            f"❌ Could not find a game called **{self.game_name.value}**.",
-            ephemeral=True
-        )
+        if found:
+            category, desc = found
+            embed = discord.Embed(
+                title=f"EM Game Index: {name.title()}",
+                description=desc,
+                color=discord.Color.dark_teal()
+            )
+            embed.set_footer(text=f"Category: {category}")
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        else:
+            await interaction.response.send_message(
+                f"❌ Could not find a game called **{self.game_name.value}**.",
+                ephemeral=True
+            )
 
 class IndexCog(commands.Cog):
     def __init__(self, bot):
