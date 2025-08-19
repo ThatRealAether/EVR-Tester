@@ -189,7 +189,7 @@ class EventCog(commands.Cog):
             "[Establishment Survival Clip Montage](https://youtu.be/1DBn-YMvkvw)\n"
             "-# This is a youtube video containing all of ES' best moments"
         )
-        await ctx.send(credit_text)
+        await ctx.send(credit_text, suppress_embeds=True)
     
     @commands.command()
     async def devlist(self, ctx):
