@@ -181,7 +181,7 @@ class EventCog(commands.Cog):
         await ctx.send(embed=embed, view=view)
 
     @commands.command()
-    async def ESinfo(self, ctx)
+    async def ESinfo(self, ctx):
         credit_text = (
             "# __Credits & Montage__\n"
             "[Full Establishment Survival Credits](https://docs.google.com/document/d/1KOF-V0HDE6PwnxB5CD_4hyK4OCy4nDYxvINBdF2GX1g/edit?usp=sharing)\n"
