@@ -84,10 +84,6 @@ class GameModal(discord.ui.Modal, title="Look up a Game"):
                 ephemeral=True
             )
 
-class IndexCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-
 def parse_event_date(event_str):
     match = re.search(r"\(Date:\s*(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\)", event_str)
     if match:
@@ -544,25 +540,26 @@ class EventCog(commands.Cog):
         await ctx.send(embed=embed)
 
         class IndexView(discord.ui.View):
-            def __init__(self, ctx, bot):
+            def __init__(self, ctx):
                 super().__init__(timeout=60)
                 self.ctx = ctx
-                self.bot = bot
 
             @discord.ui.button(label="Look Up Game", style=discord.ButtonStyle.primary)
             async def lookup(self, interaction: discord.Interaction, button: discord.ui.Button):
-                if interaction.user != ctx.author:
+                if interaction.user != self.ctx.author:
                     return await interaction.response.send_message("This isn’t your session!", ephemeral=True)
-                await interaction.response.send_modal(GameModal(ctx, bot))
+                await interaction.response.send_modal(GameModal())
 
             async def on_timeout(self):
+                for child in self.children:
+                    child.disabled = True
                 try:
-                    await ctx.send("⌛ This index session has expired. Use `!index` again.")
+                    await message.edit(content="⌛ This index session has expired. Use `!index` again.", view=self)
                 except:
                     pass
 
-        view = IndexView(ctx, self.bot)
-        await ctx.send("Click below to look up a game:", view=view)
+        view = IndexView(ctx)
+        message = await ctx.send("Click below to look up a game:", view=view)
 
 
     @commands.command()
