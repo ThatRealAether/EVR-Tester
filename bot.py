@@ -540,63 +540,6 @@ class EventCog(commands.Cog):
             f"event: {removed_event or 'N/A'}, placement: {removed_placement or 'N/A'}."
         )
 
-    class CompareCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-
-        @commands.command()
-        async def compare(self, ctx, member: discord.Member):
-            user_id = ctx.author.id
-            other_id = member.id
-
-            async def fetch_stats(uid):
-                wins = await self.bot.db.fetchval(
-                    "SELECT COUNT(*) FROM stats WHERE user_id = $1 AND placement = '1st'", uid
-                )
-                top3 = await self.bot.db.fetchval(
-                    """
-                    SELECT COUNT(*) FROM stats
-                    WHERE user_id = $1
-                      AND placement IN ('1st', '2nd', '3rd')
-                    """, uid
-                )
-                variety = await self.bot.db.fetchval(
-                    "SELECT COUNT(DISTINCT game) FROM stats WHERE user_id = $1", uid
-                )
-                most_played = await self.bot.db.fetchrow(
-                    """
-                    SELECT game, COUNT(*) as plays
-                    FROM stats
-                    WHERE user_id = $1
-                    GROUP BY game
-                    ORDER BY plays DESC
-                    LIMIT 1
-                    """, uid
-                )
-                return wins, top3, variety, most_played
-
-            user_stats = await fetch_stats(user_id)
-            other_stats = await fetch_stats(other_id)
-
-            def format_stats(member, stats):
-                wins, top3, variety, most_played = stats
-                return (
-                    f"**Wins:** {wins}\n"
-                    f"**Top 3 Placements:** {top3}\n"
-                    f"**Game Variety:** {variety}\n"
-                    f"**Most Played Game:** {most_played['game']} ({most_played['plays']} times)"
-                    if most_played else "**Most Played Game:** None"
-                )
-
-            embed = discord.Embed(
-                title="PvP Stats",
-                color=discord.Color.dark_teal()
-            )
-            embed.add_field(name=ctx.author.display_name, value=format_stats(ctx.author, user_stats), inline=True)
-            embed.add_field(name=member.display_name, value=format_stats(member, other_stats), inline=True)
-
-            await ctx.send(embed=embed)
-
     @commands.command()
     async def index(self, ctx):
         
@@ -755,7 +698,6 @@ class DiscordBot(commands.Bot):
     async def setup_hook(self):
         await self.add_cog(EventCog(self, self.pool))
         await self.add_cog(TeamCog(self, self.pool))
-        await bot.add_cog(CompareCog(bot, self.pool))
         self.logger.info("Cogs loaded.")
 
     async def on_ready(self):
