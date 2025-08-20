@@ -38,7 +38,7 @@ GAME_DATA = {
         "liminality": "## __Liminality__\n"
                 "You and everyone else present is thrown into a liminal space with a monster lurking around the premises, try to stay quiet and low to the ground, other instructions are given by the bot that roams those halls.",
     },
-    "Every Man For Himself": {
+    "Free For All": {
         "doppelgangers": "## __Doppelgangers__\n"
                 "Everyone is thrown into a facility where you need to get checked out by guards, your goal is to be let in the facility without getting gassed. 2-3 players will be assigned to be a guard and your goal is to let the citizens in, but keep the doppelgangers out.",
         "troll on the bridge": "## __Troll on the Bridge__\n"
