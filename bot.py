@@ -597,9 +597,6 @@ class EventCog(commands.Cog):
 
             await ctx.send(embed=embed)
 
-async def setup(bot):
-    await bot.add_cog(CompareCog(bot))
-
     @commands.command()
     async def index(self, ctx):
         
