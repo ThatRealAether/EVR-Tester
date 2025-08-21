@@ -126,7 +126,7 @@ class EventCog(commands.Cog):
                     "- **!index** — Show list of game modes (reply with name to see description)\n"
                     "- **!search <game name>** — Show winners of a specific game mode\n"
                     "- **!allevents [@user]** - Lists every event registered under a user\n"
-                    "- **!esinfo** - lists the credits and montage for Establishment Survival"
+                    "- **!geninfo** - lists the credits and montage for Establishment Survival"
                 )),
                 ("Team Commands", (
                     "# __Team Commands__\n"
@@ -240,13 +240,17 @@ class EventCog(commands.Cog):
         await ctx.send(embed=embed, view=view)
 
     @commands.command()
-    async def esinfo(self, ctx):
+    async def geninfo(self, ctx):
         credit_text = (
             "# __Credits & Montage__\n"
             "[Full Establishment Survival Credits](https://docs.google.com/document/d/1KOF-V0HDE6PwnxB5CD_4hyK4OCy4nDYxvINBdF2GX1g/edit?usp=sharing)\n"
             "-# This is a google document listing all of the credits for Establishment Survival ranging from worlds, to music, to helpers\n\n"
             "[Establishment Survival Clip Montage](https://youtu.be/1DBn-YMvkvw)\n"
-            "-# This is a youtube video containing all of ES' best moments"
+            "-# This is a youtube video containing all of ES' best moments\n\n"
+            "[Host Profile](https://vrchat.com/home/user/usr_7d9512be-aa0d-458b-a189-d2301a27de3c)\n"
+            "-# This is the vrchat link for the host, friend them to join events\n\n"
+            "[Establishment Minigames](https://vrchat.com/home/group/grp_cee38e10-d374-4ace-bbdd-d04b6b817b39)\n"
+            "-# This is the VRChat group for Establishment Minigames, join the group so you can join certain gamemodes!"
         )
         await ctx.send(credit_text, suppress_embeds=True)
 
