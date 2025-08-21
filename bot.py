@@ -136,7 +136,7 @@ class EventCog(commands.Cog):
                     "- **!leaderboard** - Show leaderboard of all teams by points.\n"
                 )),
                 ("Dev Commands", (
-                    "**REQUIRES ADMIN PERMISSIONS TO USE**\n+
+                    "**REQUIRES ADMIN PERMISSIONS TO USE**\n"
                     "- **!eventreg** - Log an event\n"
                     "- **!bulkreg** - Same format as !eventreg minus br logic\n"
                     " `• Example: !eventreg @User Cooking false 7/25`\n"
