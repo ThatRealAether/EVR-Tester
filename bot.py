@@ -135,6 +135,17 @@ class EventCog(commands.Cog):
                     "- **!teamstats [team_name]** - Show stats of a team or your own team if no name provided.\n"
                     "- **!leaderboard** - Show leaderboard of all teams by points.\n"
                 )),
+                ("Dev Commands", (
+                    "**REQUIRES ADMIN PERMISSION TO USE**\n+
+                    "- **!eventreg** - Log an event\n"
+                    "- **!bulkreg** - Same format as !eventreg minus br logic\n"
+                    " `• Example: !eventreg @User Cooking false 7/25`\n"
+                    " `• Example: !eventreg @User PVP true 1st 7/25`\n"
+                    "- **!editreg** - Edit an entry of an event\n"
+                    " `• Example: !editreg @User Cooking 5/6 => Cooking 5/6/2024`\n"
+                    "- **!clearall [@user]** — Clear all stats for a user\n"
+                    "- **!clearrec [@user]** — Clear most recent stat for a user"
+                )),
                 ("Secret Commands", (
                     "# __Secret Commands__\n"
                     "**!vivziepop**\n"
@@ -238,21 +249,6 @@ class EventCog(commands.Cog):
             "-# This is a youtube video containing all of ES' best moments"
         )
         await ctx.send(credit_text, suppress_embeds=True)
-    
-    @commands.command()
-    async def devlist(self, ctx):
-        dev_text = (
-            "# __Dev Commands__\n"
-            "- **!eventreg** - Log an event\n"
-            "- **!bulkreg** - Same format as !eventreg minus br logic\n"
-            " `• Example: !eventreg @User Cooking false 7/25`\n"
-            " `• Example: !eventreg @User PVP true 1st 7/25`\n"
-            "- **!editreg** - Edit an entry of an event\n"
-            " `• Example: !editreg @User Cooking 5/6 => Cooking 5/6/2024`\n"
-            "- **!clearall [@user]** — Clear all stats for a user\n"
-            "- **!clearrec [@user]** — Clear most recent stat for a user"
-        )
-        await ctx.send(dev_text)
 
     @commands.command()
     async def eventreg(self, ctx, player: discord.Member, event_name: str, is_battle_royal: str, placement_or_date: str = None, date: str = None):
