@@ -136,12 +136,12 @@ class EventCog(commands.Cog):
                     "- **!leaderboard** - Show leaderboard of all teams by points.\n"
                 )),
                 ("Dev Commands", (
-                    "**REQUIRES ADMIN PERMISSION TO USE**\n+
+                    "**REQUIRES ADMIN PERMISSIONS TO USE**\n+
                     "- **!eventreg** - Log an event\n"
                     "- **!bulkreg** - Same format as !eventreg minus br logic\n"
                     " `• Example: !eventreg @User Cooking false 7/25`\n"
                     " `• Example: !eventreg @User PVP true 1st 7/25`\n"
-                    "- **!editreg** - Edit an entry of an event\n"
+                    "- **!editreg** - Edit an entry for an event of a given user\n"
                     " `• Example: !editreg @User Cooking 5/6 => Cooking 5/6/2024`\n"
                     "- **!clearall [@user]** — Clear all stats for a user\n"
                     "- **!clearrec [@user]** — Clear most recent stat for a user"
@@ -242,7 +242,7 @@ class EventCog(commands.Cog):
     @commands.command()
     async def geninfo(self, ctx):
         credit_text = (
-            "# __Credits & Montage__\n"
+            "# __General Info__\n"
             "[Full Establishment Survival Credits](https://docs.google.com/document/d/1KOF-V0HDE6PwnxB5CD_4hyK4OCy4nDYxvINBdF2GX1g/edit?usp=sharing)\n"
             "-# This is a google document listing all of the credits for Establishment Survival ranging from worlds, to music, to helpers\n\n"
             "[Establishment Survival Clip Montage](https://youtu.be/1DBn-YMvkvw)\n"
