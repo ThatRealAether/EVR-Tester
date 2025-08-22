@@ -42,6 +42,17 @@ class Secret(commands.Cog):
             await ctx.send("I don't think you *really* broke a rule, did you?")
 
     @commands.command()
+    async def superman(self, ctx):
+        try:
+            until = utcnow() + timedelta(seconds=604800)
+            await ctx.author.timeout(until)
+            await ctx.send("IMBOUTAKUUUUUUUUU")
+        except discord.Forbidden:
+            await ctx.send("no :(")
+        except discord.HTTPException:
+            await ctx.send("I don't think you *really* broke a rule, did you?")
+
+    @commands.command()
     async def killaether(self, ctx):
         await ctx.send("i agree")
 
