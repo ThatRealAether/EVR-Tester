@@ -153,7 +153,8 @@ class EventCog(commands.Cog):
                     "**!killaether**\n"
                     "**!omegaflowey**\n"
                     "**!imstrong**\n"
-                    "**!rannum**"
+                    "**!rannum**\n"
+                    "**!superman** - YOU WILL GET TIMED OUT FOR A VERY LONG TIME DO NOT USE THIS AS WE CANNOT REVERT THIS"
                 ))
             ]
             self.update_buttons()
