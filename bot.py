@@ -51,6 +51,8 @@ GAME_DATA = {
                 "Hook Chasers is all about aerial tag, everyone except one random person every round. The tagger's goal is to tag everyone, the runner's goal is to run away, the time for each round ranges from 8-15 minutes depending on player count. The tagger gets points for tagging people, runners get points for time alive, the person with the least amount of points every round dies.",
         "karts": "## __Karts__\n"
                 "You and your peers are placed onto a racetrack, your goal is to not be in one of the last 2 positions when you finish, if you are, you get eliminated from the event. Each track has its own obstacles that you need to avoid ranging from icy floors, to giant pinballs in the sky.",
+        "ghost maze": "## __Ghost Maze__\n"
+                "One of you will be selected as \"Pac-Man\" and that player will try to hunt everyone else down. An invisible phantom will be monitoring whether you've been caught or not, if you are you will be forced to respawn and wait until the round is over. The Pac-Man's goal is to capture every ghost, the ghosts' goal is to survive until the timer runs out.",
     },
     "Team Based": {
         "locate the spy": "## __Locate the Spy__\n"
