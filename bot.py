@@ -471,35 +471,30 @@ class EventCog(commands.Cog):
                 embed.add_field(name="Marathon Wins", value=str(marathon_wins), inline=False)
 
             await ctx.send(embed=embed)
-
-    class CloneCog(commands.Cog):
-        def __init__(self, bot):
-            self.bot = bot
-            self.pool = bot.pool
     
-        @commands.command()
-        async def clone(self, ctx, source: discord.Member, target: discord.Member):
-            """Clone all stats from source user to target user without erasing target's data"""
-            if source.id == target.id:
-                return await ctx.send("❌ You can’t clone stats onto the same user.")
+    @commands.command()
+    async def clone(self, ctx, source: discord.Member, target: discord.Member):
+        """Clone all stats from source user to target user without erasing target's data"""
+        if source.id == target.id:
+            return await ctx.send("❌ You can’t clone stats onto the same user.")
 
-            rows = await self.pool.fetch(
-                "SELECT game, placement, event FROM stats WHERE user_id = $1",
-                source.id
+        rows = await self.pool.fetch(
+            "SELECT game, placement, event FROM stats WHERE user_id = $1",
+            source.id
+        )
+
+        if not rows:
+            return await ctx.send(f"⚠️ {source.display_name} has no stats to clone.")
+
+        for row in rows:
+            await self.pool.execute(
+                "INSERT INTO stats (user_id, game, placement, event) VALUES ($1, $2, $3, $4)",
+                target.id, row["game"], row["placement"], row["event"]
             )
 
-            if not rows:
-                return await ctx.send(f"⚠️ {source.display_name} has no stats to clone.")
-
-            for row in rows:
-                await self.pool.execute(
-                    "INSERT INTO stats (user_id, game, placement, event) VALUES ($1, $2, $3, $4)",
-                    target.id, row["game"], row["placement"], row["event"]
-                )
-
-            await ctx.send(
-                f"✅ Cloned **{len(rows)}** stats from {source.display_name} → {target.display_name}."
-            )
+        await ctx.send(
+            f"✅ Cloned **{len(rows)}** stats from {source.display_name} → {target.display_name}."
+        )
     
     @commands.command()
     async def clearall(self, ctx, player: discord.Member):
