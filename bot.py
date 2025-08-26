@@ -489,7 +489,7 @@ class EventCog(commands.Cog):
         for row in rows:
             await self.pool.execute(
                 "INSERT INTO stats (user_id, br_placements, events, marathon_wins) VALUES ($1, $2, $3, $4)",
-                target.id, row["game"], row["placement"], row["event"]
+                target.id, row["br_placements"], row["events"], row["marathon_wins"]
             )
 
         await ctx.send(
