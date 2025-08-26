@@ -479,7 +479,7 @@ class EventCog(commands.Cog):
             return await ctx.send("❌ You can’t clone stats onto the same user.")
 
         rows = await self.pool.fetch(
-            "SELECT game, placement, event FROM stats WHERE user_id = $1",
+            "SELECT br_placements, events, marathon_wins FROM stats WHERE user_id = $1",
             source.id
         )
 
