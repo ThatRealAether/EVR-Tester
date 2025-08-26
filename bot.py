@@ -506,7 +506,7 @@ class EventCog(commands.Cog):
             )    
     
         event_rows = await self.pool.fetch(
-            "SELECT game, placement, event FROM stats WHERE user_id = $1",
+            "SELECT br_placements, events, marathon_wins FROM stats WHERE user_id = $1",
             str(source.id)
         )
 
@@ -515,7 +515,7 @@ class EventCog(commands.Cog):
             try:
                 await self.pool.execute(
                     """
-                    INSERT INTO stats (user_id, game, placement, event)
+                    INSERT INTO stats (user_id, br_placements, events, marathon_wins)
                     VALUES ($1, $2, $3, $4)
                     ON CONFLICT DO NOTHING
                     """,
