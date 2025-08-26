@@ -473,6 +473,30 @@ class EventCog(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.command()
+    async def clone(self, ctx, source: discord.Member, target: discord.Member):
+        """Clone all stats from source user to target user without erasing target's data"""
+        if source.id == target.id:
+            return await ctx.send("❌ You can’t clone stats onto the same user.")
+
+        rows = await self.bot.db.fetch(
+            "SELECT game, placement, event FROM stats WHERE user_id = $1",
+            source.id
+        )
+
+        if not rows:
+            return await ctx.send(f"⚠️ {source.display_name} has no stats to clone.")
+
+        for row in rows:
+            await self.bot.db.execute(
+                "INSERT INTO stats (user_id, game, placement, event) VALUES ($1, $2, $3, $4)",
+                target.id, row["game"], row["placement"], row["event"]
+            )
+
+        await ctx.send(
+            f"✅ Cloned **{len(rows)}** stats from {source.display_name} → {target.display_name}."
+        )
+    
+    @commands.command()
     async def clearall(self, ctx, player: discord.Member):
         uid = str(player.id)
         async with self.pool.acquire() as conn:
