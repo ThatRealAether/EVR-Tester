@@ -478,9 +478,12 @@ class EventCog(commands.Cog):
         if source.id == target.id:
             return await ctx.send("❌ You can’t clone stats onto the same user.")
 
+        source_id = str(source.id)
+        target_id = str(target.id)
+
         rows = await self.pool.fetch(
             "SELECT br_placements, events, marathon_wins FROM stats WHERE user_id = $1",
-            source.id
+            source_id
         )
 
         if not rows:
@@ -489,7 +492,7 @@ class EventCog(commands.Cog):
         for row in rows:
             await self.pool.execute(
                 "INSERT INTO stats (user_id, br_placements, events, marathon_wins) VALUES ($1, $2, $3, $4)",
-                target.id, row["br_placements"], row["events"], row["marathon_wins"]
+                target_id, row["br_placements"], row["events"], row["marathon_wins"]
             )
 
         await ctx.send(
