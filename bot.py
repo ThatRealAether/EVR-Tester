@@ -478,26 +478,57 @@ class EventCog(commands.Cog):
         if source.id == target.id:
             return await ctx.send("❌ You can’t clone stats onto the same user.")
 
-        source_id = str(source.id)
-        target_id = str(target.id)
-
-        rows = await self.pool.fetch(
+        source_totals = await self.pool.fetchrow(
             "SELECT br_placements, events, marathon_wins FROM stats WHERE user_id = $1",
-            source_id
+            str(source.id)
         )
 
-        if not rows:
+        if not source_totals:
             return await ctx.send(f"⚠️ {source.display_name} has no stats to clone.")
 
-        for row in rows:
+        target_totals = await self.pool.fetchrow(
+            "SELECT br_placements, events, marathon_wins FROM stats WHERE user_id = $1",
+            str(target.id)
+        )
+
+        if target_totals:
+            new_br = target_totals["br_placements"] + source_totals["br_placements"]
+            new_marathon = target_totals["marathon_wins"] + source_totals["marathon_wins"]
+            new_events = target_totals["events"] + source_totals["events"]
+            await self.pool.execute(
+                "UPDATE stats SET br_placements = $1, events = $2, marathon_wins = $3 WHERE user_id = $4",
+                new_br, new_events, new_marathon, str(target.id)
+            )
+        else:
             await self.pool.execute(
                 "INSERT INTO stats (user_id, br_placements, events, marathon_wins) VALUES ($1, $2, $3, $4)",
-                target_id, row["br_placements"], row["events"], row["marathon_wins"]
-            )
+                str(target.id), source_totals["br_placements"], source_totals["events"], source_totals["marathon_wins"]
+            )    
+    
+        event_rows = await self.pool.fetch(
+            "SELECT game, placement, event FROM stats WHERE user_id = $1",
+            str(source.id)
+        )
+
+        cloned_count = 0
+        for row in event_rows:
+            try:
+                await self.pool.execute(
+                    """
+                    INSERT INTO stats (user_id, game, placement, event)
+                    VALUES ($1, $2, $3, $4)
+                    ON CONFLICT DO NOTHING
+                    """,
+                    str(target.id), row["br_placements"], row["events"], row["marathon_wins"]
+                )
+                cloned_count += 1
+            except:
+                continue
 
         await ctx.send(
-            f"✅ Cloned **{len(rows)}** stats from {source.display_name} → {target.display_name}."
+            f"✅ Cloned **{cloned_count}** event entries and updated totals (BR placements, events, marathon wins) from {source.display_name} → {target.display_name}."
         )
+
     
     @commands.command()
     async def clearall(self, ctx, player: discord.Member):
