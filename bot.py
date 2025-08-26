@@ -483,7 +483,7 @@ class EventCog(commands.Cog):
             if source.id == target.id:
                 return await ctx.send("❌ You can’t clone stats onto the same user.")
 
-            rows = await self.bot.db.fetch(
+            rows = await self.pool.fetch(
                 "SELECT game, placement, event FROM stats WHERE user_id = $1",
                 source.id
             )
@@ -492,7 +492,7 @@ class EventCog(commands.Cog):
                 return await ctx.send(f"⚠️ {source.display_name} has no stats to clone.")
 
             for row in rows:
-                await self.bot.db.execute(
+                await self.pool.execute(
                     "INSERT INTO stats (user_id, game, placement, event) VALUES ($1, $2, $3, $4)",
                     target.id, row["game"], row["placement"], row["event"]
                 )
