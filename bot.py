@@ -289,6 +289,22 @@ class EventCog(commands.Cog):
         await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
 
     @commands.command()
+    async def regremove(self, ctx, event_name: str, event_date: str):
+        """Remove a specific event registry by name and date (format: DD/MM/YYYY)."""
+
+        result = await self.pool.execute(
+            "DELETE FROM stats WHERE event = $1 AND game = $2",
+            event_name, event_date
+        )
+
+        deleted_count = int(result.split()[-1])
+
+        if deleted_count == 0:
+            await ctx.send(f"⚠️ No event registry found with name `{event_name}` and date `{event_date}`.")
+        else:
+            await ctx.send(f"✅ Removed **{deleted_count}** event registry matching `{event_name}` on `{event_date}`.")
+
+    @commands.command()
     async def editreg(self, ctx, player: discord.Member, *, args: str):
         uid = str(player.id)
 
