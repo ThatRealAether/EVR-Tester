@@ -289,20 +289,62 @@ class EventCog(commands.Cog):
         await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
 
     @commands.command()
-    async def regremove(self, ctx, event_name: str, event_date: str):
-        """Remove a specific event registry by name and date (format: DD/MM/YYYY)."""
+    async def regremove(self, ctx, event_name: str, date: str, player: discord.Member = None):
+        """
+        Remove a specific event entry for a user.
+        Usage: !regremove "Pizzeria Survival" 7/31/2025
+        Optionally: !regremove "Pizzeria Survival" 7/31/2025 @user
+        """
+        user = player or ctx.author
+        uid = str(user.id)
 
-        result = await self.pool.execute(
-            "DELETE FROM stats WHERE event = $1 AND game = $2",
-            event_name, event_date
+        row = await self.pool.fetchrow(
+            "SELECT wins, br_placements, events, marathon_wins FROM stats WHERE user_id = $1",
+            uid
         )
+        if not row or not row.get("events"):
+            return await ctx.send(f"⚠️ No events found for {user.display_name}.")
 
-        deleted_count = int(result.split()[-1])
+        events = list(row["events"] or [])
+        br_placements = list(row["br_placements"] or [])
+        wins = row.get("wins", 0) or 0
+        marathon_wins = row.get("marathon_wins", 0) or 0
 
-        if deleted_count == 0:
-            await ctx.send(f"⚠️ No event registry found with name `{event_name}` and date `{event_date}`.")
+        matched_index = None
+        for i, e in enumerate(events):
+            if event_name.lower() in e.lower() and date in e:
+                matched_index = i
+                break
+
+        if matched_index is None:
+            return await ctx.send(f"⚠️ Could not find an event matching `{event_name}` on `{date}` for {user.display_name}.")
+
+        def is_br_event(text: str) -> bool:
+            t = text.lower()
+            return ("royal" in t) or ("battle" in t and "royal" in t) or ("race royal" in t)
+
+        br_event_positions = [i for i, e in enumerate(events) if is_br_event(e)]
+
+        removed_event = events.pop(matched_index)
+
+        removed_placement = None
+        if matched_index in br_event_positions:
+            br_index = br_event_positions.index(matched_index)
+            if br_index < len(br_placements):
+                removed_placement = br_placements.pop(br_index)
+
+        if removed_placement:
+            if isinstance(removed_placement, str) and removed_placement.lower() == "1st":
+                wins = max(0, wins - 1)
         else:
-            await ctx.send(f"✅ Removed **{deleted_count}** event registry matching `{event_name}` on `{event_date}`.")
+            wins = max(0, wins - 1)
+
+        await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
+
+        msg = f"✅ Removed event for {user.display_name}: `{removed_event}`"
+        if removed_placement:
+            msg += f" (removed placement: `{removed_placement}`)"
+        await ctx.send(msg)
 
     @commands.command()
     async def editreg(self, ctx, player: discord.Member, *, args: str):
