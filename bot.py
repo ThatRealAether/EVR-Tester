@@ -463,7 +463,11 @@ class EventCog(commands.Cog):
         )
 
         non_first_br = await self.pool.fetchval(
-            "SELECT COUNT(*) FROM stats WHERE user_id = $1 AND br_placements IS NOT NULL AND br_placements != '1st'",
+            """
+            SELECT COUNT(*) FROM stats
+            WHERE user_id = $1
+              AND br_placements && ARRAY['2nd','3rd','4th']
+            """,
             user_id
         )
 
