@@ -470,7 +470,7 @@ class EventCog(commands.Cog):
 
     @commands.command()
     async def recalc(self, ctx, member: discord.Member = None):
-        """Recalculate a user's wins based on all events minus BR placements that aren't 1st."""
+        """Recalculate a user's wins: all events minus non-1st BR placements."""
         member = member or ctx.author
         user_id = str(member.id)
 
@@ -482,14 +482,14 @@ class EventCog(commands.Cog):
         if not rows:
             return await ctx.send(f"⚠️ {member.display_name} has no stats recorded.")
 
-        total_events = len(rows)
+        total_wins = sum(len(row['events']) if isinstance(row['events'], list) else 1 for row in rows)
 
-        non_first_br = 0
         for row in rows:
-            br_array = row['br_placements'] or []
-            non_first_br += sum(1 for p in br_array if p != '1st')
+            br_str = row['br_placements'] or ""
+            br_array = br_str.strip("{}").split(",") if br_str else []
+            br_array = [p.strip() for p in br_array]
+            total_wins -= sum(1 for p in br_array if p != '1st')
 
-        total_wins = total_events - non_first_br
         if total_wins < 0:
             total_wins = 0
 
