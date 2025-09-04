@@ -116,9 +116,10 @@ def parse_event_date(event_str):
         return datetime.min
 
 def normalize_event(event_name):
-    for main_event, aliases in EVENT_ALIASES.items():
-        if event_name in aliases:
-            return main_event
+    """Map any variant to its canonical event name using EVENT_ALIASES."""
+    for canonical, variants in EVENT_ALIASES.items():
+        if event_name in variants:
+            return canonical
     return event_name
 
 class EventCog(commands.Cog):
@@ -301,6 +302,7 @@ class EventCog(commands.Cog):
 
         await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
 
+    
     @commands.command()
     async def variety(self, ctx, member: discord.Member = None):
         """Show variety breakdown for a specific user."""
@@ -315,15 +317,13 @@ class EventCog(commands.Cog):
             return await ctx.send(f"⚠️ {member.display_name} has no recorded events.")
 
         normalized_counts = {}
-        for row in rows:
-            event_list = row["events"]
-            if not isinstance(event_list, list):
-                event_list = [event_list]
 
-            for e in event_list:
-                event_name = normalize_event(e)
-                event_key = ", ".join(event_name) if isinstance(event_name, list) else str(event_name)
-                normalized_counts[event_key] = normalized_counts.get(event_key, 0) + 1
+        for row in rows:
+            events_list = row["events"] if isinstance(row["events"], list) else [row["events"]]
+
+            for e in events_list:
+                event = normalize_event(e)
+                normalized_counts[event] = normalized_counts.get(event, 0) + 1
 
         total_events = sum(normalized_counts.values())
         unique_events = len(normalized_counts)
@@ -338,7 +338,7 @@ class EventCog(commands.Cog):
 
         if top_events:
             breakdown = "\n".join(
-                f"- {event} — {plays} ({round(plays / total_events * 100)}%)"
+                f"- {event} — {plays} ({round(plays/total_events*100)}%)"
                 for event, plays in top_events
             )
             embed.add_field(name="Most Attended Events", value=breakdown, inline=False)
