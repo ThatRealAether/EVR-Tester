@@ -398,6 +398,54 @@ class EventCog(commands.Cog):
         await ctx.send(msg)
 
     @commands.command()
+    async def setwins(self, ctx, member: discord.Member, new_wins: int):
+        """Overwrite a user's normal wins"""
+        row = await self.pool.fetchrow(
+            "SELECT wins FROM stats WHERE user_id = $1",
+            member.id
+        )
+        old_wins = row["wins"] if row else 0
+
+        difference = abs(new_wins - old_wins)
+
+        if difference > 2:
+            class ConfirmView(discord.ui.View):
+                def __init__(self):
+                    super().__init__(timeout=30)
+                    self.confirmed = False
+
+                @discord.ui.button(label="Yes", style=discord.ButtonStyle.green)
+                async def yes_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+                    if interaction.user != ctx.author:
+                        return await interaction.response.send_message("This isn’t your confirmation session!", ephemeral=True)
+                    self.confirmed = True
+                    self.stop()
+                    await interaction.response.edit_message(content="✅ Overwrite confirmed.", view=None)
+
+                @discord.ui.button(label="No", style=discord.ButtonStyle.red)
+                async def no_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+                    if interaction.user != ctx.author:
+                        return await interaction.response.send_message("This isn’t your confirmation session!", ephemeral=True)
+                    self.confirmed = False
+                    self.stop()
+                    await interaction.response.edit_message(content="❌ Overwrite canceled.", view=None)
+
+            view = ConfirmView()
+            await ctx.send(
+                f"⚠️ Your overwrite has a moderate difference between old ({old_wins}) and new ({new_wins}) win count. Continue?",
+                view=view
+            )
+            await view.wait()
+            if not getattr(view, "confirmed", False):
+                return
+
+        await self.pool.execute(
+            "UPDATE stats SET wins = $1 WHERE user_id = $2",
+            new_wins, member.id
+        )
+        await ctx.send(f"✅ Set {member.display_name}'s wins to {new_wins}.")
+
+    @commands.command()
     async def editreg(self, ctx, player: discord.Member, *, args: str):
         uid = str(player.id)
 
