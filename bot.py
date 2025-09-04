@@ -71,8 +71,9 @@ GAME_DATA = {
 }
 
 EVENT_ALIASES = {
-    "Pizzeria Survival": ["Pizzeria Survival Hard", "Pizzeria Survival Normal", "Pizzeria Survival Easy"],
-    "Locate the Spy": ["Locate the Spy", "LtS Doubles", "LtS Legacy"]
+    "Pizzeria Survival": ["Pizzeria Survival Hard", "Pizzeria Survival Normal", "Pizzeria Survival Easy", "Twisted Pizzeria"],
+    "Locate the Spy": ["Locate the Spy", "LtS Doubles", "LtS Legacy"],
+    "Battle Royal": ["Battle Royal", "Mini-Royal", "Co-operative Royal", "Prize Battle Royal $10"] 
 }
 
 class GameModal(discord.ui.Modal, title="Look up a Game"):
