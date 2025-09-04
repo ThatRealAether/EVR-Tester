@@ -307,7 +307,7 @@ class EventCog(commands.Cog):
         member = member or ctx.author
 
         rows = await self.pool.fetch(
-            "SELECT event FROM stats WHERE user_id = $1",
+            "SELECT events FROM stats WHERE user_id = $1",
             str(member.id)
         )
 
