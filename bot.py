@@ -452,7 +452,7 @@ class EventCog(commands.Cog):
         await ctx.send(f"✅ Set {member.display_name}'s wins to {new_wins}.")
 
     @commands.command()
-    async def recalcwins(self, ctx, member: discord.Member = None):
+    async def recalc(self, ctx, member: discord.Member = None):
         """Recalculate the total wins for a user based on 1st place finishes."""
         member = member or ctx.author
 
