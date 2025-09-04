@@ -473,7 +473,7 @@ class EventCog(commands.Cog):
         """Recalculate a user's wins: all events minus non-1st BR placements."""
         member = member or ctx.author
         user_id = str(member.id)
-
+    
         rows = await self.pool.fetch(
             "SELECT events, br_placements FROM stats WHERE user_id = $1",
             user_id
@@ -485,9 +485,7 @@ class EventCog(commands.Cog):
         total_wins = sum(len(row['events']) if isinstance(row['events'], list) else 1 for row in rows)
 
         for row in rows:
-            br_str = row['br_placements'] or ""
-            br_array = br_str.strip("{}").split(",") if br_str else []
-            br_array = [p.strip() for p in br_array]
+            br_array = row['br_placements'] or []
             total_wins -= sum(1 for p in br_array if p != '1st')
 
         if total_wins < 0:
