@@ -346,6 +346,23 @@ class EventCog(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
+    async def checkplacements(self, ctx, member: discord.Member = None):
+        """Check raw br_placements stored for a user (for debugging)."""
+        member = member or ctx.author
+
+        rows = await self.pool.fetch(
+            "SELECT br_placements FROM stats WHERE user_id = $1",
+            str(member.id)
+        )
+
+        if not rows:
+            return await ctx.send(f"⚠️ No placements found for {member.display_name}.")
+
+        placements = [row["br_placements"] for row in rows]
+
+        await ctx.send(f"📊 Raw placements for {member.display_name}:\n```{placements}```")
+
+    @commands.command()
     async def regremove(self, ctx, event_name: str, date: str, player: discord.Member = None):
         """
         Remove a specific event entry for a user.
