@@ -115,10 +115,10 @@ def parse_event_date(event_str):
     else:
         return datetime.min
 
-def normalize_event(event_name: str):
-    for canonical, variants in EVENT_ALIASES.items():
-        if event_name == canonical or event_name in variants:
-            return canonical
+def normalize_event(event_name):
+    for main_event, aliases in EVENT_ALIASES.items():
+        if event_name in aliases:
+            return main_event
     return event_name
 
 class EventCog(commands.Cog):
