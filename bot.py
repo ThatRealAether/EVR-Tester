@@ -464,7 +464,10 @@ class EventCog(commands.Cog):
         if not rows:
             return await ctx.send(f"⚠️ {member.display_name} has no stats recorded.")
 
-        wins_count = sum(1 for row in rows if row["br_placements"].lower() == "1st")
+        wins_count = 0
+        for row in rows:
+            placements = row["br_placements"]
+            wins_count += sum(1 for p in placements if p.lower() == "1st")
 
         await self.pool.execute(
             "UPDATE stats SET wins = $1 WHERE user_id = $2",
