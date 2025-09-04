@@ -308,7 +308,7 @@ class EventCog(commands.Cog):
 
         rows = await self.pool.fetch(
             "SELECT events FROM stats WHERE user_id = $1",
-            str(member.id)
+            member.id
         )
 
         if not rows:
@@ -316,8 +316,14 @@ class EventCog(commands.Cog):
 
         normalized_counts = {}
         for row in rows:
-            event = normalize_event(row["events"])
-            normalized_counts[event] = normalized_counts.get(event, 0) + 1
+            event_list = row["events"]
+            if not isinstance(event_list, list):
+                event_list = [event_list]
+
+            for e in event_list:
+                event_name = normalize_event(e)
+                event_key = ", ".join(event_name) if isinstance(event_name, list) else str(event_name)
+                normalized_counts[event_key] = normalized_counts.get(event_key, 0) + 1
 
         total_events = sum(normalized_counts.values())
         unique_events = len(normalized_counts)
@@ -332,7 +338,7 @@ class EventCog(commands.Cog):
 
         if top_events:
             breakdown = "\n".join(
-                f"- {event} — {plays} ({round(plays/total_events*100)}%)"
+                f"- {event} — {plays} ({round(plays / total_events * 100)}%)"
                 for event, plays in top_events
             )
             embed.add_field(name="Most Attended Events", value=breakdown, inline=False)
