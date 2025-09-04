@@ -470,10 +470,10 @@ class EventCog(commands.Cog):
 
     @commands.command()
     async def recalc(self, ctx, member: discord.Member = None):
-        """Recalculate a user's wins: all events minus non-1st BR placements."""
+        """Recalculate wins: all events minus non-1st BR placements."""
         member = member or ctx.author
         user_id = str(member.id)
-    
+
         rows = await self.pool.fetch(
             "SELECT events, br_placements FROM stats WHERE user_id = $1",
             user_id
@@ -485,8 +485,13 @@ class EventCog(commands.Cog):
         total_wins = sum(len(row['events']) if isinstance(row['events'], list) else 1 for row in rows)
 
         for row in rows:
-            br_array = row['br_placements'] or []
-            total_wins -= sum(1 for p in br_array if p != '1st')
+            br_array = row.get('br_placements') or []
+            for placement in br_array:
+                match = re.search(r'\d+', placement)
+                if match:
+                    number = int(match.group())
+                    if number != 1:
+                        total_wins -= 1
 
         if total_wins < 0:
             total_wins = 0
