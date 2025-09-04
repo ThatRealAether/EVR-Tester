@@ -452,30 +452,28 @@ class EventCog(commands.Cog):
         await ctx.send(f"✅ Set {member.display_name}'s wins to {new_wins}.")
 
     @commands.command()
-    async def recalc(self, ctx, member: discord.Member = None):
-        """Recalculate the total wins for a user based on 1st place finishes."""
+    async def recalcwins(self, ctx, member: discord.Member = None):
+        """Recalculate a user's wins based on all events minus BR placements that aren't 1st."""
         member = member or ctx.author
 
-        rows = await self.pool.fetch(
-            "SELECT br_placements FROM stats WHERE user_id = $1",
-            str(member.id)
+        total_events = await self.pool.fetchval(
+            "SELECT COUNT(*) FROM stats WHERE user_id = $1",
+            member.id
         )
 
-        if not rows:
-            return await ctx.send(f"⚠️ {member.display_name} has no stats recorded.")
+        non_first_br = await self.pool.fetchval(
+            "SELECT COUNT(*) FROM stats WHERE user_id = $1 AND br_placements IS NOT NULL AND br_placements != '1st'",
+            member.id
+        )
 
-        wins_count = 0
-        for row in rows:
-            placements = row["br_placements"]
-            wins_count += sum(1 for p in placements if p.lower() == "1st")
+        total_wins = total_events - non_first_br
 
         await self.pool.execute(
             "UPDATE stats SET wins = $1 WHERE user_id = $2",
-            wins_count,
-            str(member.id)
+            total_wins, member.id
         )
 
-        await ctx.send(f"✅ Recalculated **{member.display_name}**'s wins: **{wins_count}**")
+        await ctx.send(f"✅ Recalculated wins for {member.display_name}: **{total_wins}**")
 
     @commands.command()
     async def editreg(self, ctx, player: discord.Member, *, args: str):
