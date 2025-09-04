@@ -452,6 +452,29 @@ class EventCog(commands.Cog):
         await ctx.send(f"✅ Set {member.display_name}'s wins to {new_wins}.")
 
     @commands.command()
+    async def recalcwins(self, ctx, member: discord.Member = None):
+        """Recalculate the total wins for a user based on 1st place finishes."""
+        member = member or ctx.author
+
+        rows = await self.pool.fetch(
+            "SELECT br_placements FROM stats WHERE user_id = $1",
+            str(member.id)
+        )
+
+        if not rows:
+            return await ctx.send(f"⚠️ {member.display_name} has no stats recorded.")
+
+        wins_count = sum(1 for row in rows if row["br_placements"].lower() == "1st")
+
+        await self.pool.execute(
+            "UPDATE stats SET wins = $1 WHERE user_id = $2",
+            wins_count,
+            str(member.id)
+        )
+
+        await ctx.send(f"✅ Recalculated **{member.display_name}**'s wins: **{wins_count}**")
+
+    @commands.command()
     async def editreg(self, ctx, player: discord.Member, *, args: str):
         uid = str(player.id)
 
