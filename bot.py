@@ -308,7 +308,7 @@ class EventCog(commands.Cog):
 
         rows = await self.pool.fetch(
             "SELECT events FROM stats WHERE user_id = $1",
-            member.id
+            str(member.id)
         )
 
         if not rows:
