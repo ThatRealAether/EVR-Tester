@@ -324,12 +324,8 @@ class EventCog(commands.Cog):
 
         normalized_counts = {}
         for row in rows:
-            event_list = row["events"]
-            if isinstance(event_list, str):
-                event_list = [event_list]
-            for event in event_list:
-                normalized = normalize_event(event)
-                normalized_counts[normalized] = normalized_counts.get(normalized, 0) + 1
+            event = normalize_event(row["events"])
+            normalized_counts[event] = normalized_counts.get(event, 0) + 1
 
         total_events = sum(normalized_counts.values())
         unique_events = len(normalized_counts)
@@ -337,15 +333,15 @@ class EventCog(commands.Cog):
         top_events = sorted(normalized_counts.items(), key=lambda x: x[1], reverse=True)[:4]
 
         embed = discord.Embed(
-            title=f"📊 Variety Stats for {member.display_name}",
+            title=f"Event Variety Stats for {member.display_name}",
             color=discord.Color.dark_teal()
         )
         embed.add_field(name="Total Unique Events", value=str(unique_events), inline=False)
 
         if top_events:
             breakdown = "\n".join(
-                f"- {event} — {plays} ({round(plays / total_events * 100)}%)"
-                for event, plays in top_events
+                f"- {event} — {count} ({round(count / total_events * 100)}%)"
+                for event, count in top_events
             )
             embed.add_field(name="Most Attended Events", value=breakdown, inline=False)
 
