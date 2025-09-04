@@ -115,18 +115,15 @@ def parse_event_date(event_str):
     else:
         return datetime.min
 
-def normalize_event(event_name):
-    """
-    Map any variant to its canonical event name using EVENT_ALIASES.
-    Ignores anything in parentheses, with or without 'Date:'.
-    """
-    base_name = re.sub(r"\(\s*(?:Date:\s*)?.*?\)", "", event_name).strip().lower()
+def normalize_event(raw_event: str) -> str:
+    """Normalize event name, merge aliases, and strip date info."""
+    event = raw_event.split("(Date:")[0].split("(")[0].strip()
 
-    for canonical, variants in EVENT_ALIASES.items():
-        for v in variants:
-            if base_name == v.strip().lower():
-                return canonical
-    return base_name.title()
+    for main_event, variants in EVENT_ALIASES.items():
+        if event in variants:
+            return main_event
+
+    return event
 
 class EventCog(commands.Cog):
     def __init__(self, bot, pool):
