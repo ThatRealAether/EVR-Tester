@@ -70,6 +70,11 @@ GAME_DATA = {
     }
 }
 
+EVENT_ALIASES = {
+    "Pizzeria Survival": ["Pizzeria Survival Hard", "Pizzeria Survival Normal", "Pizzeria Survival Easy"],
+    "Locate the Spy": ["Locate the Spy", "LtS Doubles", "LtS Legacy"]
+}
+
 class GameModal(discord.ui.Modal, title="Look up a Game"):
     game_name = discord.ui.TextInput(
         label="Enter a game name",
@@ -109,6 +114,12 @@ def parse_event_date(event_str):
         return datetime(year, month, day)
     else:
         return datetime.min
+
+def normalize_event(event_name: str):
+    for canonical, variants in EVENT_ALIASES.items():
+        if event_name == canonical or event_name in variants:
+            return canonical
+    return event_name
 
 class EventCog(commands.Cog):
     def __init__(self, bot, pool):
@@ -289,6 +300,44 @@ class EventCog(commands.Cog):
             await ctx.send(f"Recorded non-battle royal event **{event_name}** for {player.display_name} on {date}.")
 
         await self.save_user_stats(uid, wins, br_placements, events, marathon_wins)
+
+    @commands.command()
+    async def variety(self, ctx, member: discord.Member = None):
+        """Show variety breakdown for a specific user."""
+        member = member or ctx.author
+
+        rows = await self.pool.fetch(
+            "SELECT event FROM stats WHERE user_id = $1",
+            str(member.id)
+        )
+
+        if not rows:
+            return await ctx.send(f"⚠️ {member.display_name} has no recorded events.")
+
+        normalized_counts = {}
+        for row in rows:
+            event = normalize_event(row["event"])
+            normalized_counts[event] = normalized_counts.get(event, 0) + 1
+
+        total_events = sum(normalized_counts.values())
+        unique_events = len(normalized_counts)
+
+        top_events = sorted(normalized_counts.items(), key=lambda x: x[1], reverse=True)[:4]
+
+        embed = discord.Embed(
+            title=f"📊 Variety Stats for {member.display_name}",
+            color=discord.Color.dark_teal()
+        )
+        embed.add_field(name="Total Unique Events", value=str(unique_events), inline=False)
+
+        if top_events:
+            breakdown = "\n".join(
+                f"- {event} — {plays} ({round(plays/total_events*100)}%)"
+                for event, plays in top_events
+            )
+            embed.add_field(name="Most Attended Events", value=breakdown, inline=False)
+
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def regremove(self, ctx, event_name: str, date: str, player: discord.Member = None):
