@@ -118,11 +118,9 @@ def parse_event_date(event_str):
 def normalize_event(raw_event: str) -> str:
     """Normalize event name, merge aliases, and strip date info."""
     event = raw_event.split("(Date:")[0].split("(")[0].strip()
-
     for main_event, variants in EVENT_ALIASES.items():
         if event in variants:
             return main_event
-
     return event
 
 class EventCog(commands.Cog):
@@ -320,9 +318,11 @@ class EventCog(commands.Cog):
             return await ctx.send(f"⚠️ {member.display_name} has no recorded events.")
 
         normalized_counts = {}
+
         for row in rows:
-            event = normalize_event(row["events"])
-            normalized_counts[event] = normalized_counts.get(event, 0) + 1
+            for raw_event in row["events"]:
+                event = normalize_event(raw_event)
+                normalized_counts[event] = normalized_counts.get(event, 0) + 1
 
         total_events = sum(normalized_counts.values())
         unique_events = len(normalized_counts)
@@ -330,7 +330,7 @@ class EventCog(commands.Cog):
         top_events = sorted(normalized_counts.items(), key=lambda x: x[1], reverse=True)[:4]
 
         embed = discord.Embed(
-            title=f"Event Variety Stats for {member.display_name}",
+            title=f"📊 Variety Stats for {member.display_name}",
             color=discord.Color.dark_teal()
         )
         embed.add_field(name="Total Unique Events", value=str(unique_events), inline=False)
