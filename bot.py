@@ -469,24 +469,24 @@ class EventCog(commands.Cog):
         await ctx.send(f"✅ Set {member.display_name}'s wins to {new_wins}.")
 
     @commands.command()
-    async def recalcwins(self, ctx, member: discord.Member = None):
+    async def recalc(self, ctx, member: discord.Member = None):
         """Recalculate a user's wins based on all events minus BR placements that aren't 1st."""
         member = member or ctx.author
         user_id = str(member.id)
 
         total_events = await self.pool.fetchval(
-            "SELECT COUNT(*) FROM stats WHERE user_id = $1",
+            "SELECT COUNT(events) FROM stats WHERE user_id = $1",
             user_id
         )
 
-        non_first_br = await self.pool.fetchval(
-            """
-            SELECT COUNT(*) FROM stats
-            WHERE user_id = $1
-              AND br_placements && ARRAY['2nd','3rd','4th']
-            """,
+        row = await self.pool.fetchrow(
+            "SELECT br_placements FROM stats WHERE user_id = $1",
             user_id
         )
+
+        non_first_br = 0
+        if row and row['br_placements']:
+            non_first_br = sum(1 for p in row['br_placements'] if p != '1st')
 
         total_wins = total_events - non_first_br
 
