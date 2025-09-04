@@ -317,7 +317,7 @@ class EventCog(commands.Cog):
         normalized_counts = {}
         for row in rows:
             event = normalize_event(row["events"])
-            normalized_counts[event] = normalized_counts.get(events, 0) + 1
+            normalized_counts[event] = normalized_counts.get(event, 0) + 1
 
         total_events = sum(normalized_counts.values())
         unique_events = len(normalized_counts)
