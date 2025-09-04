@@ -455,22 +455,23 @@ class EventCog(commands.Cog):
     async def recalcwins(self, ctx, member: discord.Member = None):
         """Recalculate a user's wins based on all events minus BR placements that aren't 1st."""
         member = member or ctx.author
+        user_id = str(member.id)
 
         total_events = await self.pool.fetchval(
             "SELECT COUNT(*) FROM stats WHERE user_id = $1",
-            member.id
+            user_id
         )
 
         non_first_br = await self.pool.fetchval(
             "SELECT COUNT(*) FROM stats WHERE user_id = $1 AND br_placements IS NOT NULL AND br_placements != '1st'",
-            member.id
+            user_id
         )
 
         total_wins = total_events - non_first_br
 
         await self.pool.execute(
             "UPDATE stats SET wins = $1 WHERE user_id = $2",
-            total_wins, member.id
+            total_wins, user_id
         )
 
         await ctx.send(f"✅ Recalculated wins for {member.display_name}: **{total_wins}**")
