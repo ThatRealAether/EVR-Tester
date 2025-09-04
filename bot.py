@@ -116,11 +116,17 @@ def parse_event_date(event_str):
         return datetime.min
 
 def normalize_event(event_name):
-    """Map any variant to its canonical event name using EVENT_ALIASES."""
+    """
+    Map any variant to its canonical event name using EVENT_ALIASES.
+    Ignores anything in parentheses, with or without 'Date:'.
+    """
+    base_name = re.sub(r"\(\s*(?:Date:\s*)?.*?\)", "", event_name).strip().lower()
+
     for canonical, variants in EVENT_ALIASES.items():
-        if event_name in variants:
-            return canonical
-    return event_name
+        for v in variants:
+            if base_name == v.strip().lower():
+                return canonical
+    return base_name.title()
 
 class EventCog(commands.Cog):
     def __init__(self, bot, pool):
@@ -317,13 +323,13 @@ class EventCog(commands.Cog):
             return await ctx.send(f"⚠️ {member.display_name} has no recorded events.")
 
         normalized_counts = {}
-
         for row in rows:
-            events_list = row["events"] if isinstance(row["events"], list) else [row["events"]]
-
-            for e in events_list:
-                event = normalize_event(e)
-                normalized_counts[event] = normalized_counts.get(event, 0) + 1
+            event_list = row["events"]
+            if isinstance(event_list, str):
+                event_list = [event_list]
+            for event in event_list:
+                normalized = normalize_event(event)
+                normalized_counts[normalized] = normalized_counts.get(normalized, 0) + 1
 
         total_events = sum(normalized_counts.values())
         unique_events = len(normalized_counts)
@@ -338,7 +344,7 @@ class EventCog(commands.Cog):
 
         if top_events:
             breakdown = "\n".join(
-                f"- {event} — {plays} ({round(plays/total_events*100)}%)"
+                f"- {event} — {plays} ({round(plays / total_events * 100)}%)"
                 for event, plays in top_events
             )
             embed.add_field(name="Most Attended Events", value=breakdown, inline=False)
