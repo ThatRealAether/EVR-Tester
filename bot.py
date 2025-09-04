@@ -474,21 +474,24 @@ class EventCog(commands.Cog):
         member = member or ctx.author
         user_id = str(member.id)
 
-        total_events = await self.pool.fetchval(
-            "SELECT COUNT(events) FROM stats WHERE user_id = $1",
+        rows = await self.pool.fetch(
+            "SELECT events, br_placements FROM stats WHERE user_id = $1",
             user_id
         )
 
-        row = await self.pool.fetchrow(
-            "SELECT br_placements FROM stats WHERE user_id = $1",
-            user_id
-        )
+        if not rows:
+            return await ctx.send(f"⚠️ {member.display_name} has no stats recorded.")
+
+        total_events = len(rows)
 
         non_first_br = 0
-        if row and row['br_placements']:
-            non_first_br = sum(1 for p in row['br_placements'] if p != '1st')
+        for row in rows:
+            br_array = row['br_placements'] or []
+            non_first_br += sum(1 for p in br_array if p != '1st')
 
         total_wins = total_events - non_first_br
+        if total_wins < 0:
+            total_wins = 0
 
         await self.pool.execute(
             "UPDATE stats SET wins = $1 WHERE user_id = $2",
